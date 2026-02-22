@@ -28,7 +28,7 @@ export default async function DashboardPage() {
   const { data: profile } = await supabase
     .from("user_profiles")
     .select("display_name, role")
-    .eq("id", user.id)
+    .eq("user_id", user.id)
     .returns<{ display_name: string | null; role: string }[]>()
     .single();
 

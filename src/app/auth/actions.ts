@@ -51,7 +51,7 @@ export async function signIn(
     const { data: profile } = await supabase
       .from("user_profiles")
       .select("status")
-      .eq("id", user.id)
+      .eq("user_id", user.id)
       .returns<{ status: string }[]>()
       .single();
 
@@ -64,7 +64,7 @@ export async function signIn(
     await supabase
       .from("user_profiles")
       .update({ last_login: new Date().toISOString() } as never)
-      .eq("id", user.id);
+      .eq("user_id", user.id);
   }
 
   redirect("/dashboard");

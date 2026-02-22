@@ -59,7 +59,7 @@ export async function updateSession(request: NextRequest) {
     const { data: profile } = await supabase
       .from("user_profiles")
       .select("role, status")
-      .eq("id", user.id)
+      .eq("user_id", user.id)
       .single();
 
     const isAdmin =
