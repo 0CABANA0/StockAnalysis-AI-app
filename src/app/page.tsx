@@ -1,6 +1,18 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 
-export default function Home() {
+import { createClient } from "@/lib/supabase/server";
+
+export default async function Home() {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (user) {
+    redirect("/dashboard");
+  }
+
   return (
     <div className="flex min-h-screen flex-col items-center justify-center gap-8 p-8">
       <h1 className="text-4xl font-bold">StockAnalysis AI</h1>

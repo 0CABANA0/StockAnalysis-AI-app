@@ -329,8 +329,13 @@ export type EtfMacroMappingUpdate = Partial<
   Omit<EtfMacroMapping, "id" | "created_at">
 >;
 
+export type UserProfileInsert = Omit<UserProfile, "created_at" | "updated_at">;
+
 export type UserProfileUpdate = Partial<
-  Pick<UserProfile, "display_name" | "telegram_chat_id" | "role" | "status">
+  Pick<
+    UserProfile,
+    "display_name" | "telegram_chat_id" | "role" | "status" | "last_login"
+  >
 >;
 
 export type NotificationGroupInsert = Omit<
@@ -374,93 +379,113 @@ export interface Database {
         Row: Portfolio;
         Insert: PortfolioInsert;
         Update: PortfolioUpdate;
+        Relationships: [];
       };
       transactions: {
         Row: Transaction;
         Insert: TransactionInsert;
         Update: TransactionUpdate;
+        Relationships: [];
       };
       distributions: {
         Row: Distribution;
         Insert: DistributionInsert;
         Update: DistributionUpdate;
+        Relationships: [];
       };
       recommendations: {
         Row: Recommendation;
         Insert: RecommendationInsert;
         Update: RecommendationUpdate;
+        Relationships: [];
       };
       price_alerts: {
         Row: PriceAlert;
         Insert: PriceAlertInsert;
         Update: PriceAlertUpdate;
+        Relationships: [];
       };
       macro_snapshots: {
         Row: MacroSnapshot;
         Insert: MacroSnapshotInsert;
         Update: never;
+        Relationships: [];
       };
       sentiment_results: {
         Row: SentimentResult;
         Insert: SentimentResultInsert;
         Update: never;
+        Relationships: [];
       };
       prediction_scores: {
         Row: PredictionScore;
         Insert: PredictionScoreInsert;
         Update: never;
+        Relationships: [];
       };
       etf_fund_master: {
         Row: EtfFundMaster;
         Insert: EtfFundMasterInsert;
         Update: EtfFundMasterUpdate;
+        Relationships: [];
       };
       etf_macro_mapping: {
         Row: EtfMacroMapping;
         Insert: EtfMacroMappingInsert;
         Update: EtfMacroMappingUpdate;
+        Relationships: [];
       };
       user_profiles: {
         Row: UserProfile;
-        Insert: never;
+        Insert: UserProfileInsert;
         Update: UserProfileUpdate;
+        Relationships: [];
       };
       notification_groups: {
         Row: NotificationGroup;
         Insert: NotificationGroupInsert;
         Update: Partial<Omit<NotificationGroup, "id" | "created_at">>;
+        Relationships: [];
       };
       notification_targets: {
         Row: NotificationTarget;
         Insert: NotificationTargetInsert;
         Update: Partial<Omit<NotificationTarget, "id" | "created_at">>;
+        Relationships: [];
       };
       notification_history: {
         Row: NotificationHistory;
         Insert: NotificationHistoryInsert;
         Update: never;
+        Relationships: [];
       };
       audit_logs: {
         Row: AuditLog;
         Insert: AuditLogInsert;
         Update: never;
+        Relationships: [];
       };
       role_change_logs: {
         Row: RoleChangeLog;
         Insert: RoleChangeLogInsert;
         Update: never;
+        Relationships: [];
       };
       model_configs: {
         Row: ModelConfig;
         Insert: ModelConfigInsert;
         Update: ModelConfigUpdate;
+        Relationships: [];
       };
       model_change_logs: {
         Row: ModelChangeLog;
         Insert: ModelChangeLogInsert;
         Update: never;
+        Relationships: [];
       };
     };
+    Views: Record<string, never>;
+    Functions: Record<string, never>;
     Enums: {
       market_type: MarketType;
       transaction_type: TransactionType;
@@ -474,5 +499,6 @@ export interface Database {
       asset_type: AssetType;
       distribution_type: DistributionType;
     };
+    CompositeTypes: Record<string, never>;
   };
 }

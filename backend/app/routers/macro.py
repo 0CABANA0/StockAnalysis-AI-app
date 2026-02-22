@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from supabase import Client
 
 from app.dependencies import get_supabase
+from app.middleware.auth import CurrentUser, get_current_user, require_admin
 from app.models.macro import (
     MacroCollectResponse,
     MacroHistoryResponse,
@@ -17,8 +18,11 @@ router = APIRouter(prefix="/api/macro", tags=["macro"])
 
 
 @router.post("/collect", response_model=MacroCollectResponse)
-def collect(client: Client = Depends(get_supabase)):
-    """거시경제 데이터를 수집하고 DB에 저장한다."""
+def collect(
+    _admin: CurrentUser = Depends(require_admin),
+    client: Client = Depends(get_supabase),
+):
+    """거시경제 데이터를 수집하고 DB에 저장한다. (ADMIN 전용)"""
     logger.info("Manual macro collection triggered")
     snapshot, failed, collected_at = collect_macro_data()
 
@@ -40,7 +44,10 @@ def collect(client: Client = Depends(get_supabase)):
 
 
 @router.get("/latest", response_model=MacroSnapshotResponse)
-def latest(client: Client = Depends(get_supabase)):
+def latest(
+    _user: CurrentUser = Depends(get_current_user),
+    client: Client = Depends(get_supabase),
+):
     """최신 거시 스냅샷 1건을 반환한다."""
     result = get_latest(client)
     if result is None:
@@ -52,6 +59,7 @@ def latest(client: Client = Depends(get_supabase)):
 def history(
     limit: int = Query(default=20, ge=1, le=100),
     offset: int = Query(default=0, ge=0),
+    _user: CurrentUser = Depends(get_current_user),
     client: Client = Depends(get_supabase),
 ):
     """거시 스냅샷 이력을 페이지네이션으로 반환한다."""

@@ -1,68 +1,83 @@
 "use client";
 
-import { useState } from "react";
+import { useActionState } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
+
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+
+import { signIn, type AuthState } from "../actions";
+
+const initialState: AuthState = { error: null };
 
 export default function LoginPage() {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    // TODO: Supabase 인증 연동
-  };
+  const [state, formAction, isPending] = useActionState(signIn, initialState);
+  const searchParams = useSearchParams();
+  const callbackError = searchParams.get("error");
 
   return (
     <div className="flex min-h-screen items-center justify-center p-4">
-      <div className="w-full max-w-md space-y-8">
-        <div className="text-center">
-          <h1 className="text-3xl font-bold">로그인</h1>
-          <p className="mt-2 text-gray-600 dark:text-gray-400">
-            계정에 로그인하세요
+      <Card className="w-full max-w-md">
+        <CardHeader className="text-center">
+          <CardTitle className="text-2xl">로그인</CardTitle>
+          <CardDescription>계정에 로그인하세요</CardDescription>
+        </CardHeader>
+        <CardContent>
+          {(state.error || callbackError) && (
+            <div className="bg-destructive/10 text-destructive mb-4 rounded-md p-3 text-sm">
+              {state.error ||
+                "인증 처리 중 오류가 발생했습니다. 다시 시도해주세요."}
+            </div>
+          )}
+          <form action={formAction} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="email">이메일</Label>
+              <Input
+                id="email"
+                name="email"
+                type="email"
+                placeholder="you@example.com"
+                required
+                autoComplete="email"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="password">비밀번호</Label>
+              <Input
+                id="password"
+                name="password"
+                type="password"
+                required
+                autoComplete="current-password"
+              />
+            </div>
+            <Button type="submit" className="w-full" disabled={isPending}>
+              {isPending ? "로그인 중..." : "로그인"}
+            </Button>
+          </form>
+        </CardContent>
+        <CardFooter className="justify-center">
+          <p className="text-muted-foreground text-sm">
+            계정이 없으신가요?{" "}
+            <Link
+              href="/auth/signup"
+              className="text-primary underline-offset-4 hover:underline"
+            >
+              회원가입
+            </Link>
           </p>
-        </div>
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div>
-            <label htmlFor="email" className="block text-sm font-medium">
-              이메일
-            </label>
-            <input
-              id="email"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              className="mt-1 block w-full rounded-lg border border-gray-300 px-4 py-3 dark:border-gray-700 dark:bg-gray-900"
-              placeholder="you@example.com"
-            />
-          </div>
-          <div>
-            <label htmlFor="password" className="block text-sm font-medium">
-              비밀번호
-            </label>
-            <input
-              id="password"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              className="mt-1 block w-full rounded-lg border border-gray-300 px-4 py-3 dark:border-gray-700 dark:bg-gray-900"
-            />
-          </div>
-          <button
-            type="submit"
-            className="w-full rounded-lg bg-blue-600 px-4 py-3 text-white transition-colors hover:bg-blue-700"
-          >
-            로그인
-          </button>
-        </form>
-        <p className="text-center text-sm text-gray-600 dark:text-gray-400">
-          계정이 없으신가요?{" "}
-          <Link href="/auth/signup" className="text-blue-600 hover:underline">
-            회원가입
-          </Link>
-        </p>
-      </div>
+        </CardFooter>
+      </Card>
     </div>
   );
 }
