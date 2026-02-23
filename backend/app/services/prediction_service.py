@@ -241,12 +241,16 @@ def _calc_geopolitical_score(client: Client) -> GeopoliticalSignal:
 
 
 def _determine_direction(score: float) -> str:
-    """종합 점수 기반 방향 판정."""
+    """종합 점수 기반 투자 의견 5단계 판정."""
+    if score >= 60:
+        return "STRONG_BUY"
     if score >= 25:
-        return "BULLISH"
+        return "BUY"
+    if score <= -60:
+        return "STRONG_SELL"
     if score <= -25:
-        return "BEARISH"
-    return "NEUTRAL"
+        return "SELL"
+    return "HOLD"
 
 
 def _determine_risk_level(
@@ -334,12 +338,12 @@ def _generate_ai_report(
 
 ## 종합
 - 종합 점수: {total_score:.1f}
-- 방향: {direction}
+- 투자 의견: {direction} (5단계: STRONG_BUY / BUY / HOLD / SELL / STRONG_SELL)
 - 리스크: {risk_level}
 
 ## 응답 형식 (JSON만 반환)
 {{
-  "opinion": "2-3문장의 핵심 투자 의견",
+  "opinion": "2-3문장의 핵심 투자 의견 (투자 의견 '{direction}'과 일치해야 함)",
   "report_text": "5-8문장의 상세 분석 리포트",
   "scenario_bull": {{
     "title": "강세 시나리오",
@@ -399,7 +403,13 @@ def _make_fallback_report(
     ticker: str, score: float, direction: str
 ) -> dict:
     """AI 실패 시 기본 리포트를 반환한다."""
-    dir_text = {"BULLISH": "강세", "BEARISH": "약세", "NEUTRAL": "중립"}
+    dir_text = {
+        "STRONG_BUY": "강력 매수",
+        "BUY": "매수",
+        "HOLD": "중립",
+        "SELL": "매도",
+        "STRONG_SELL": "강력 매도",
+    }
     d = dir_text.get(direction, "중립")
 
     return {
