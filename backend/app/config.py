@@ -20,6 +20,9 @@ class Settings(BaseSettings):
     telegram_chat_id: str = ""
     telegram_bot_enabled: bool = False
 
+    # KOFIA (Module F — Phase 2)
+    kofia_api_key: str = ""
+
     model_config = {"env_file": ".env", "env_file_encoding": "utf-8"}
 
     @property

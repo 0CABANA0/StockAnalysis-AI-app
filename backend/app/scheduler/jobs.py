@@ -1,10 +1,10 @@
-"""APScheduler 기반 크론잡 — 거시 수집 + 감성 분석 + 통합 스코어링."""
+"""APScheduler 기반 크론잡 — ETF 동기화 + 거시 수집 + 감성 분석 + 통합 스코어링."""
 
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.cron import CronTrigger
 
 from app.dependencies import get_supabase
-from app.services import alert_service, prediction_service
+from app.services import alert_service, etf_service, prediction_service
 from app.services.macro_collector import collect_macro_data
 from app.services.sentiment_service import collect_and_analyze
 from app.services.supabase_client import insert_snapshot
@@ -13,6 +13,23 @@ from app.utils.logger import get_logger
 logger = get_logger(__name__)
 
 scheduler = BackgroundScheduler(timezone="Asia/Seoul")
+
+
+def _scheduled_etf_sync():
+    """스케줄러에 의해 호출되는 ETF/펀드 동기화 작업."""
+    logger.info("Scheduled ETF sync started")
+    try:
+        client = get_supabase()
+        result = etf_service.sync_all(client)
+        logger.info(
+            "Scheduled ETF sync done — foreign=%d, domestic=%d, fund=%d, failed=%d",
+            result.foreign_count,
+            result.domestic_count,
+            result.fund_count,
+            len(result.failed_tickers),
+        )
+    except Exception as e:
+        logger.error("Scheduled ETF sync failed: %s", e)
 
 
 def _scheduled_macro_collect():
@@ -140,12 +157,20 @@ def _scheduled_risk_alert_check():
 def start_scheduler():
     """스케줄러를 시작한다.
 
+    - ETF 동기화:    06:30 KST (1일 1회)
     - 거시 수집:     07:00 / 13:00 / 18:00 KST
     - 감성 분석:     08:00 / 14:00 / 19:00 KST (거시 +1h)
     - 통합 스코어링: 09:00 / 15:00 / 20:00 KST (감성 +1h)
     - 리스크 알림:   09:30 / 15:30 / 20:30 KST (스코어링 +30m)
     - 가격 알림:     07:00~23:50, 10분 간격
     """
+    scheduler.add_job(
+        _scheduled_etf_sync,
+        trigger=CronTrigger(hour=6, minute=30, timezone="Asia/Seoul"),
+        id="etf_sync",
+        name="ETF/Fund Sync",
+        replace_existing=True,
+    )
     scheduler.add_job(
         _scheduled_macro_collect,
         trigger=CronTrigger(hour="7,13,18", timezone="Asia/Seoul"),
@@ -187,7 +212,7 @@ def start_scheduler():
     )
     scheduler.start()
     logger.info(
-        "Scheduler started — macro 07/13/18, sentiment 08/14/19, "
+        "Scheduler started — etf 06:30, macro 07/13/18, sentiment 08/14/19, "
         "prediction 09/15/20, risk 09:30/15:30/20:30, "
         "price-alert every 10min (07~23) KST"
     )

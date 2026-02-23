@@ -4,7 +4,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import settings
-from app.routers import alert, health, macro, prediction, sentiment, stock
+from app.routers import alert, etf, health, image, macro, performance, prediction, sentiment, stock
 from app.scheduler.jobs import start_scheduler, stop_scheduler
 from app.services import telegram_service
 from app.utils.logger import get_logger
@@ -60,3 +60,6 @@ app.include_router(stock.router)
 app.include_router(sentiment.router)
 app.include_router(prediction.router)
 app.include_router(alert.router)
+app.include_router(etf.router)
+app.include_router(performance.router)
+app.include_router(image.router)
