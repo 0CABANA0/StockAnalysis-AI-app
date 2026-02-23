@@ -12,9 +12,17 @@ interface IndicatorCardsProps {
 }
 
 function signalColor(signal: string): "default" | "destructive" | "secondary" {
-  if (signal.includes("매수") || signal.includes("상승") || signal.includes("정배열"))
+  if (
+    signal.includes("매수") ||
+    signal.includes("상승") ||
+    signal.includes("정배열")
+  )
     return "default";
-  if (signal.includes("매도") || signal.includes("하락") || signal.includes("역배열"))
+  if (
+    signal.includes("매도") ||
+    signal.includes("하락") ||
+    signal.includes("역배열")
+  )
     return "destructive";
   return "secondary";
 }
@@ -104,9 +112,10 @@ export function IndicatorCards({ ticker }: IndicatorCardsProps) {
     },
     {
       label: "볼린저밴드",
-      value: bollinger_bands.middle !== null
-        ? bollinger_bands.middle.toFixed(0)
-        : "-",
+      value:
+        bollinger_bands.middle !== null
+          ? bollinger_bands.middle.toFixed(0)
+          : "-",
       signal: bollinger_bands.signal,
       description: `${bollinger_bands.lower?.toFixed(0) ?? "-"} ~ ${bollinger_bands.upper?.toFixed(0) ?? "-"}`,
     },

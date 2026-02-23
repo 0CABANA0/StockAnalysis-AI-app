@@ -54,9 +54,7 @@ export function BackendStatus({
           onClick={check}
           disabled={loading}
         >
-          <RefreshCw
-            className={`size-4 ${loading ? "animate-spin" : ""}`}
-          />
+          <RefreshCw className={`size-4 ${loading ? "animate-spin" : ""}`} />
         </Button>
       </CardHeader>
       <CardContent className="space-y-3">

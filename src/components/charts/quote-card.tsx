@@ -82,14 +82,14 @@ export function QuoteCard({ ticker, companyName }: QuoteCardProps) {
             })}
           </span>
           {companyName && (
-            <span className="text-muted-foreground text-sm">
-              {companyName}
-            </span>
+            <span className="text-muted-foreground text-sm">{companyName}</span>
           )}
         </div>
 
         {/* 변동 */}
-        <div className={`flex items-center gap-1 text-sm font-medium ${changeColor}`}>
+        <div
+          className={`flex items-center gap-1 text-sm font-medium ${changeColor}`}
+        >
           {isPositive ? (
             <TrendingUp className="size-4" />
           ) : (

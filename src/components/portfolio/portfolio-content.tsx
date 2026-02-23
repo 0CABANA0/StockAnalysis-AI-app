@@ -38,10 +38,7 @@ export function PortfolioContent({
   }, [transactions]);
 
   // 고유 티커 목록 추출
-  const tickers = useMemo(
-    () => portfolios.map((p) => p.ticker),
-    [portfolios],
-  );
+  const tickers = useMemo(() => portfolios.map((p) => p.ticker), [portfolios]);
 
   // 실시간 시세 조회
   const { quotes, loading: quotesLoading } = useStockQuotes(tickers);

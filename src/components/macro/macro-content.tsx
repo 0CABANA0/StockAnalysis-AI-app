@@ -46,9 +46,7 @@ export function MacroContent({
       if (result.success) {
         toast.success("거시 데이터가 수집되었습니다.");
         if (result.failed_tickers.length > 0) {
-          toast.warning(
-            `일부 실패: ${result.failed_tickers.join(", ")}`,
-          );
+          toast.warning(`일부 실패: ${result.failed_tickers.join(", ")}`);
         }
         router.refresh();
       }

@@ -16,7 +16,12 @@ import {
   calculateUnrealizedPnL,
   getLatestBuyPrice,
 } from "@/lib/portfolio/calculations";
-import type { MarketType, Portfolio, Transaction, MacroSnapshot } from "@/types";
+import type {
+  MarketType,
+  Portfolio,
+  Transaction,
+  MacroSnapshot,
+} from "@/types";
 
 const roleBadgeStyles: Record<string, string> = {
   SUPER_ADMIN: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300",
@@ -58,10 +63,7 @@ export function DashboardContent({
   }, [transactions]);
 
   // 고유 티커 목록
-  const tickers = useMemo(
-    () => portfolios.map((p) => p.ticker),
-    [portfolios],
-  );
+  const tickers = useMemo(() => portfolios.map((p) => p.ticker), [portfolios]);
 
   // 실시간 시세 조회
   const { quotes, loading: quotesLoading } = useStockQuotes(tickers);

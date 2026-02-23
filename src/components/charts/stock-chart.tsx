@@ -182,12 +182,12 @@ export function StockChart({ ticker }: StockChartProps) {
         <div className="relative">
           <div ref={chartContainerRef} className="h-[400px] w-full" />
           {loading && (
-            <div className="absolute inset-0 flex items-center justify-center bg-background/60">
+            <div className="bg-background/60 absolute inset-0 flex items-center justify-center">
               <Loader2 className="text-muted-foreground size-8 animate-spin" />
             </div>
           )}
           {error && !loading && (
-            <div className="absolute inset-0 flex flex-col items-center justify-center bg-background/80">
+            <div className="bg-background/80 absolute inset-0 flex flex-col items-center justify-center">
               <BarChart3 className="text-muted-foreground mb-4 size-12" />
               <p className="text-muted-foreground text-sm font-medium">
                 {error}

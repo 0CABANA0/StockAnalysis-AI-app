@@ -118,9 +118,7 @@ export function TradeContent({
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">
-                미실현 손익
-              </CardTitle>
+              <CardTitle className="text-sm font-medium">미실현 손익</CardTitle>
               {pnl.unrealizedPnL >= 0 ? (
                 <TrendingUp className="size-4 text-green-500" />
               ) : (

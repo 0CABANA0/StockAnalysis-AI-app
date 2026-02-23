@@ -42,10 +42,7 @@ export function PerformanceContent({
   }, [transactions]);
 
   // 고유 티커 목록
-  const tickers = useMemo(
-    () => portfolios.map((p) => p.ticker),
-    [portfolios],
-  );
+  const tickers = useMemo(() => portfolios.map((p) => p.ticker), [portfolios]);
 
   // 실시간 시세 조회
   const { quotes, loading: quotesLoading } = useStockQuotes(tickers);
@@ -224,9 +221,7 @@ export function PerformanceContent({
                     </div>
                     <div className="text-sm text-red-600">
                       {worstPerformer.pnl.unrealizedPnL >= 0 ? "+" : ""}
-                      {worstPerformer.pnl.unrealizedPnL.toLocaleString(
-                        "ko-KR",
-                      )}
+                      {worstPerformer.pnl.unrealizedPnL.toLocaleString("ko-KR")}
                       원 (
                       {worstPerformer.pnl.unrealizedPnLPercent >= 0 ? "+" : ""}
                       {worstPerformer.pnl.unrealizedPnLPercent.toFixed(2)}%)
