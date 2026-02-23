@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useEffect, useRef, useState } from "react";
+import { useActionState, useRef, useState } from "react";
 import { Plus } from "lucide-react";
 import { toast } from "sonner";
 
@@ -37,25 +37,22 @@ export function AddAlertDialog() {
   const [open, setOpen] = useState(false);
   const [alertType, setAlertType] = useState("");
   const formRef = useRef<HTMLFormElement>(null);
-  const [state, formAction, isPending] = useActionState(
-    addPriceAlert,
-    initialState,
-  );
 
-  useEffect(() => {
-    if (state.error === null && !isPending && formRef.current) {
-      if (formRef.current.dataset.submitted === "true") {
+  const [state, formAction, isPending] = useActionState(
+    async (prevState: ActionState, formData: FormData) => {
+      const result = await addPriceAlert(prevState, formData);
+      if (result.error) {
+        toast.error(result.error);
+      } else {
         toast.success("알림이 추가되었습니다.");
         setOpen(false);
         setAlertType("");
-        formRef.current.reset();
-        formRef.current.dataset.submitted = "";
+        formRef.current?.reset();
       }
-    }
-    if (state.error) {
-      toast.error(state.error);
-    }
-  }, [state, isPending]);
+      return result;
+    },
+    initialState,
+  );
 
   const triggerPriceLabel = TRIGGER_PRICE_LABELS[alertType] ?? "설정가";
 
@@ -74,16 +71,7 @@ export function AddAlertDialog() {
             목표가, 손절가, 변동률 알림을 설정합니다.
           </DialogDescription>
         </DialogHeader>
-        <form
-          ref={formRef}
-          action={formAction}
-          onSubmit={() => {
-            if (formRef.current) {
-              formRef.current.dataset.submitted = "true";
-            }
-          }}
-          className="space-y-4"
-        >
+        <form ref={formRef} action={formAction} className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="ticker">티커 *</Label>
             <Input
