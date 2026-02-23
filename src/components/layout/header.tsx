@@ -25,6 +25,12 @@ export async function Header() {
               >
                 대시보드
               </Link>
+              <Link
+                href="/portfolio"
+                className="text-muted-foreground hover:text-foreground text-sm transition-colors"
+              >
+                포트폴리오
+              </Link>
               <span className="text-muted-foreground text-sm">
                 {user.email}
               </span>
