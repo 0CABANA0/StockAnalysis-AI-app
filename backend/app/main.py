@@ -4,7 +4,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import settings
-from app.routers import health, macro
+from app.routers import health, macro, sentiment, stock
 from app.scheduler.jobs import start_scheduler, stop_scheduler
 from app.utils.logger import get_logger
 
@@ -44,3 +44,5 @@ app.add_middleware(
 # Routers
 app.include_router(health.router)
 app.include_router(macro.router)
+app.include_router(stock.router)
+app.include_router(sentiment.router)

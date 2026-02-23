@@ -14,5 +14,8 @@ APScheduler==3.11.0
 # Settings
 pydantic-settings==2.8.1
 
+# News RSS parsing
+feedparser==6.0.11
+
 # HTTP client (used by supabase internally)
 httpx==0.28.1

@@ -4,6 +4,7 @@ import { Users, Bell, ScrollText, Settings } from "lucide-react";
 import { Header } from "@/components/layout/header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { createClient } from "@/lib/supabase/server";
+import { BackendStatus } from "@/components/admin/backend-status";
 
 export const metadata = {
   title: "관리자 | StockAnalysis AI",
@@ -12,17 +13,36 @@ export const metadata = {
 export default async function AdminPage() {
   const supabase = await createClient();
 
-  const [usersResult, alertsResult, auditResult] = await Promise.all([
-    supabase.from("user_profiles").select("id", { count: "exact", head: true }),
-    supabase
-      .from("notification_history")
-      .select("id", { count: "exact", head: true }),
-    supabase.from("audit_logs").select("id", { count: "exact", head: true }),
-  ]);
+  const [usersResult, alertsResult, auditResult, macroResult, sentimentResult] =
+    await Promise.all([
+      supabase
+        .from("user_profiles")
+        .select("id", { count: "exact", head: true }),
+      supabase
+        .from("notification_history")
+        .select("id", { count: "exact", head: true }),
+      supabase.from("audit_logs").select("id", { count: "exact", head: true }),
+      supabase
+        .from("macro_snapshots")
+        .select("created_at")
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle(),
+      supabase
+        .from("sentiment_results")
+        .select("created_at")
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle(),
+    ]);
 
   const userCount = usersResult.count ?? 0;
   const notificationCount = alertsResult.count ?? 0;
   const auditCount = auditResult.count ?? 0;
+  const lastMacroAt =
+    (macroResult.data as { created_at: string } | null)?.created_at ?? null;
+  const lastSentimentAt =
+    (sentimentResult.data as { created_at: string } | null)?.created_at ?? null;
 
   const adminLinks = [
     {
@@ -65,6 +85,12 @@ export default async function AdminPage() {
             시스템 관리 및 사용자 관리
           </p>
         </div>
+
+        {/* 백엔드 상태 */}
+        <BackendStatus
+          lastMacroAt={lastMacroAt}
+          lastSentimentAt={lastSentimentAt}
+        />
 
         {/* 통계 카드 */}
         <div className="mb-8 grid gap-4 sm:grid-cols-3">
