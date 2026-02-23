@@ -11,7 +11,6 @@ from app.models.sentiment import (
     NewsArticle,
     SentimentCollectResponse,
     SentimentResult,
-    SentimentScore,
 )
 from app.utils.logger import get_logger
 
@@ -83,17 +82,30 @@ def _get_model_from_db(supabase_client) -> str:
     return DEFAULT_MODEL
 
 
+def _make_neutral_fallback(reason: str) -> dict:
+    """API 실패 시 중립 기본값을 반환한다."""
+    return {
+        "direction": "NEUTRAL",
+        "score": 0.0,
+        "confidence": None,
+        "event_type": None,
+        "urgency": "LOW",
+        "reasoning": reason,
+        "affected_sectors": [],
+        "affected_countries": [],
+        "short_term_impact": None,
+        "medium_term_impact": None,
+    }
+
+
 def _analyze_batch(
     articles: list[NewsArticle],
     model: str,
-) -> list[SentimentScore]:
+) -> list[dict]:
     """OpenRouter API로 뉴스 배치 감성 분석을 수행한다."""
     if not settings.openrouter_api_key:
         logger.warning("OPENROUTER_API_KEY not set — returning neutral scores")
-        return [
-            SentimentScore(label="neutral", score=0.0, summary="API 키 미설정")
-            for _ in articles
-        ]
+        return [_make_neutral_fallback("API 키 미설정") for _ in articles]
 
     titles = [f"{i + 1}. [{a.source}] {a.title}" for i, a in enumerate(articles)]
     titles_text = "\n".join(titles)
@@ -103,9 +115,16 @@ def _analyze_batch(
 {titles_text}
 
 각 헤드라인에 대해 JSON 배열로 응답하세요. 각 항목:
-- "label": "positive", "negative", "neutral" 중 하나
+- "direction": "BULLISH", "BEARISH", "NEUTRAL" 중 하나
 - "score": -1.0(매우 부정) ~ 1.0(매우 긍정) 사이 실수
-- "summary": 한국어 한 줄 요약 (20자 이내)
+- "confidence": 0.0 ~ 1.0 사이 신뢰도
+- "event_type": "GEOPOLITICAL", "ECONOMIC", "CURRENCY", "REGULATORY", "NATURAL" 중 하나 또는 null
+- "urgency": "LOW", "MEDIUM", "HIGH" 중 하나
+- "reasoning": 한국어 한 줄 분석 근거 (30자 이내)
+- "affected_sectors": 영향 받는 섹터 배열 (예: ["반도체", "자동차"]) 또는 []
+- "affected_countries": 영향 받는 국가 배열 (예: ["한국", "미국"]) 또는 []
+- "short_term_impact": 단기(1주) 영향 한 줄 요약 또는 null
+- "medium_term_impact": 중기(1~3개월) 영향 한 줄 요약 또는 null
 
 JSON 배열만 응답하세요. 다른 텍스트는 포함하지 마세요."""
 
@@ -136,32 +155,32 @@ JSON 배열만 응답하세요. 다른 텍스트는 포함하지 마세요."""
 
         scores = json.loads(content)
 
-        results: list[SentimentScore] = []
-        for i, article in enumerate(articles):
+        results: list[dict] = []
+        for i, _article in enumerate(articles):
             if i < len(scores):
                 s = scores[i]
                 results.append(
-                    SentimentScore(
-                        label=s.get("label", "neutral"),
-                        score=float(s.get("score", 0.0)),
-                        summary=s.get("summary", ""),
-                    )
+                    {
+                        "direction": s.get("direction", "NEUTRAL"),
+                        "score": float(s.get("score", 0.0)),
+                        "confidence": s.get("confidence"),
+                        "event_type": s.get("event_type"),
+                        "urgency": s.get("urgency", "LOW"),
+                        "reasoning": s.get("reasoning"),
+                        "affected_sectors": s.get("affected_sectors", []),
+                        "affected_countries": s.get("affected_countries", []),
+                        "short_term_impact": s.get("short_term_impact"),
+                        "medium_term_impact": s.get("medium_term_impact"),
+                    }
                 )
             else:
-                results.append(
-                    SentimentScore(
-                        label="neutral", score=0.0, summary="분석 누락"
-                    )
-                )
+                results.append(_make_neutral_fallback("분석 누락"))
 
         return results
 
     except Exception as e:
         logger.error("OpenRouter sentiment analysis failed: %s", e)
-        return [
-            SentimentScore(label="neutral", score=0.0, summary="분석 실패")
-            for _ in articles
-        ]
+        return [_make_neutral_fallback("분석 실패") for _ in articles]
 
 
 # ─── DB 저장/조회 ───
@@ -170,23 +189,26 @@ JSON 배열만 응답하세요. 다른 텍스트는 포함하지 마세요."""
 def _save_results(
     supabase_client,
     articles: list[NewsArticle],
-    scores: list[SentimentScore],
-    model: str,
+    analyses: list[dict],
     analyzed_at: datetime,
 ) -> int:
     """감성 분석 결과를 DB에 저장한다."""
     rows = []
-    for article, score in zip(articles, scores):
+    for article, analysis in zip(articles, analyses):
         rows.append(
             {
-                "article_title": article.title,
-                "article_link": article.link,
-                "article_source": article.source,
-                "article_published": article.published,
-                "sentiment_label": score.label,
-                "sentiment_score": score.score,
-                "sentiment_summary": score.summary,
-                "model_used": model,
+                "source_url": article.link,
+                "source_title": article.title,
+                "score": analysis["score"],
+                "direction": analysis["direction"],
+                "confidence": analysis.get("confidence"),
+                "event_type": analysis.get("event_type"),
+                "urgency": analysis.get("urgency", "LOW"),
+                "reasoning": analysis.get("reasoning"),
+                "affected_sectors": analysis.get("affected_sectors"),
+                "affected_countries": analysis.get("affected_countries"),
+                "short_term_impact": analysis.get("short_term_impact"),
+                "medium_term_impact": analysis.get("medium_term_impact"),
                 "analyzed_at": analyzed_at.isoformat(),
             }
         )
@@ -231,21 +253,21 @@ def get_results(
 
 
 def _row_to_result(row: dict) -> SentimentResult:
-    """DB row를 SentimentResult로 변환한다."""
+    """DB row를 SentimentResult로 변환한다 (플랫 매핑)."""
     return SentimentResult(
         id=row.get("id"),
-        article=NewsArticle(
-            title=row.get("article_title", ""),
-            link=row.get("article_link", ""),
-            source=row.get("article_source", ""),
-            published=row.get("article_published"),
-        ),
-        sentiment=SentimentScore(
-            label=row.get("sentiment_label", "neutral"),
-            score=float(row.get("sentiment_score", 0.0)),
-            summary=row.get("sentiment_summary", ""),
-        ),
-        model_used=row.get("model_used", ""),
+        source_url=row.get("source_url"),
+        source_title=row.get("source_title"),
+        score=float(row.get("score", 0.0)),
+        direction=row.get("direction", "NEUTRAL"),
+        confidence=row.get("confidence"),
+        event_type=row.get("event_type"),
+        urgency=row.get("urgency", "LOW"),
+        reasoning=row.get("reasoning"),
+        affected_sectors=row.get("affected_sectors"),
+        affected_countries=row.get("affected_countries"),
+        short_term_impact=row.get("short_term_impact"),
+        medium_term_impact=row.get("medium_term_impact"),
         analyzed_at=row.get("analyzed_at"),
         created_at=row.get("created_at"),
     )
@@ -263,10 +285,8 @@ def collect_and_analyze(supabase_client) -> SentimentCollectResponse:
     if not articles:
         return SentimentCollectResponse(
             success=False,
-            collected_count=0,
-            analyzed_count=0,
-            failed_count=0,
-            model_used="",
+            articles_collected=0,
+            articles_analyzed=0,
             collected_at=analyzed_at,
         )
 
@@ -276,21 +296,18 @@ def collect_and_analyze(supabase_client) -> SentimentCollectResponse:
 
     # 3. 배치 분석 (10건씩 나눠서)
     batch_size = 10
-    all_scores: list[SentimentScore] = []
+    all_analyses: list[dict] = []
     for i in range(0, len(articles), batch_size):
         batch = articles[i : i + batch_size]
-        scores = _analyze_batch(batch, model)
-        all_scores.extend(scores)
+        analyses = _analyze_batch(batch, model)
+        all_analyses.extend(analyses)
 
     # 4. DB 저장
-    saved = _save_results(supabase_client, articles, all_scores, model, analyzed_at)
-    failed = len(articles) - saved
+    saved = _save_results(supabase_client, articles, all_analyses, analyzed_at)
 
     return SentimentCollectResponse(
         success=True,
-        collected_count=len(articles),
-        analyzed_count=saved,
-        failed_count=failed,
-        model_used=model,
+        articles_collected=len(articles),
+        articles_analyzed=saved,
         collected_at=analyzed_at,
     )
