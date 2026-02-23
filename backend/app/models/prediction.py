@@ -71,7 +71,7 @@ class PredictionScoreResponse(BaseModel):
     geopolitical_score: float | None = None
     short_term_score: float
     medium_term_score: float | None = None
-    direction: str  # BULLISH | BEARISH | NEUTRAL
+    direction: str  # STRONG_BUY | BUY | HOLD | SELL | STRONG_SELL
     risk_level: str  # LOW | MEDIUM | HIGH
     opinion: str | None = None
     report_text: str | None = None
