@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useEffect, useRef } from "react";
+import { useActionState, useRef } from "react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -19,23 +19,20 @@ interface TradeFormProps {
 export function TradeForm({ portfolioId, ticker }: TradeFormProps) {
   const formRef = useRef<HTMLFormElement>(null);
   const boundAction = addTransaction.bind(null, portfolioId);
-  const [state, formAction, isPending] = useActionState(
-    boundAction,
+
+  const [, formAction, isPending] = useActionState(
+    async (prevState: ActionState, formData: FormData) => {
+      const result = await boundAction(prevState, formData);
+      if (result.error) {
+        toast.error(result.error);
+      } else {
+        toast.success("거래가 등록되었습니다.");
+        formRef.current?.reset();
+      }
+      return result;
+    },
     initialState,
   );
-
-  useEffect(() => {
-    if (state.error === null && !isPending && formRef.current) {
-      if (formRef.current.dataset.submitted === "true") {
-        toast.success("거래가 등록되었습니다.");
-        formRef.current.reset();
-        formRef.current.dataset.submitted = "";
-      }
-    }
-    if (state.error) {
-      toast.error(state.error);
-    }
-  }, [state, isPending]);
 
   const today = new Date().toISOString().split("T")[0];
 
@@ -45,16 +42,7 @@ export function TradeForm({ portfolioId, ticker }: TradeFormProps) {
         <CardTitle>거래 입력 — {ticker}</CardTitle>
       </CardHeader>
       <CardContent>
-        <form
-          ref={formRef}
-          action={formAction}
-          onSubmit={() => {
-            if (formRef.current) {
-              formRef.current.dataset.submitted = "true";
-            }
-          }}
-          className="space-y-4"
-        >
+        <form ref={formRef} action={formAction} className="space-y-4">
           <div className="space-y-2">
             <Label>거래 유형 *</Label>
             <div className="flex gap-4">
