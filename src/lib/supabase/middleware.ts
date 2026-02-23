@@ -43,7 +43,21 @@ export async function updateSession(request: NextRequest) {
   }
 
   // 보호된 라우트: 로그인하지 않은 사용자는 로그인 페이지로 리다이렉트
-  const protectedPaths = ["/dashboard", "/admin", "/portfolio", "/trade"];
+  const protectedPaths = [
+    "/dashboard",
+    "/admin",
+    "/portfolio",
+    "/trade",
+    "/alerts",
+    "/recommend",
+    "/chart",
+    "/macro",
+    "/report",
+    "/etf",
+    "/fund",
+    "/performance",
+    "/analyze",
+  ];
   const isProtectedPath = protectedPaths.some((path) =>
     pathname.startsWith(path),
   );

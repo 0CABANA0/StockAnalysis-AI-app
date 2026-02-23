@@ -29,16 +29,14 @@ const actions: ActionItem[] = [
   {
     label: "알림 설정",
     description: "가격/리스크 알림 관리",
-    href: "#",
+    href: "/alerts",
     icon: Bell,
-    disabled: true,
   },
   {
     label: "AI 분석",
     description: "종목별 투자 리포트 생성",
-    href: "#",
+    href: "/analyze",
     icon: Sparkles,
-    disabled: true,
   },
 ];
 

@@ -31,6 +31,24 @@ export async function Header() {
               >
                 포트폴리오
               </Link>
+              <Link
+                href="/recommend"
+                className="text-muted-foreground hover:text-foreground text-sm transition-colors"
+              >
+                추천
+              </Link>
+              <Link
+                href="/macro"
+                className="text-muted-foreground hover:text-foreground text-sm transition-colors"
+              >
+                거시경제
+              </Link>
+              <Link
+                href="/alerts"
+                className="text-muted-foreground hover:text-foreground text-sm transition-colors"
+              >
+                알림
+              </Link>
               <span className="text-muted-foreground text-sm">
                 {user.email}
               </span>
