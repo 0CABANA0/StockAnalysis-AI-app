@@ -10,7 +10,8 @@ import { calculateHoldingStats } from "@/lib/portfolio/calculations";
 import { TradeStats } from "@/components/portfolio/trade-stats";
 import { TradeForm } from "@/components/portfolio/trade-form";
 import { TransactionHistory } from "@/components/portfolio/transaction-history";
-import type { MarketType, Portfolio, Transaction } from "@/types";
+import { DistributionHistory } from "@/components/portfolio/distribution-history";
+import type { Distribution, MarketType, Portfolio, Transaction } from "@/types";
 
 export async function generateMetadata({
   params,
@@ -72,7 +73,17 @@ export default async function TradePage({
     .order("trade_date", { ascending: true })
     .returns<Transaction[]>();
 
+  // 분배금 이력 조회
+  const { data: distributions } = await supabase
+    .from("distributions")
+    .select("*")
+    .eq("portfolio_id", id)
+    .eq("user_id", user!.id)
+    .order("record_date", { ascending: true })
+    .returns<Distribution[]>();
+
   const txList = transactions ?? [];
+  const distList = distributions ?? [];
   const stats = calculateHoldingStats(txList);
   const market = portfolio.market as MarketType;
 
@@ -105,6 +116,14 @@ export default async function TradePage({
           <TradeForm portfolioId={id} ticker={portfolio.ticker} />
           <TransactionHistory
             transactions={txList}
+            portfolioId={id}
+            market={market}
+          />
+        </div>
+
+        <div className="mt-8">
+          <DistributionHistory
+            distributions={distList}
             portfolioId={id}
             market={market}
           />

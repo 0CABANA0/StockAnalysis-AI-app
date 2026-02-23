@@ -130,3 +130,96 @@ export async function deleteTransaction(
   revalidatePath("/portfolio");
   return { error: null };
 }
+
+// ── 분배금 ──
+
+export async function addDistribution(
+  portfolioId: string,
+  _prevState: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  const supabase = await createClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { error: "로그인이 필요합니다." };
+  }
+
+  const amount = Number(formData.get("amount"));
+  const distributionType = formData.get("distributionType") as string;
+  const recordDate = formData.get("recordDate") as string;
+  const paymentDate = (formData.get("paymentDate") as string)?.trim() || null;
+  const memo = (formData.get("memo") as string)?.trim() || null;
+
+  if (!amount || !distributionType || !recordDate) {
+    return { error: "금액, 유형, 기준일은 필수 입력입니다." };
+  }
+
+  if (amount <= 0) {
+    return { error: "금액은 0보다 커야 합니다." };
+  }
+
+  // 포트폴리오 소유권 확인
+  const { data: portfolio } = await supabase
+    .from("portfolio")
+    .select("id")
+    .eq("id", portfolioId)
+    .eq("user_id", user.id)
+    .eq("is_deleted", false)
+    .returns<{ id: string }[]>()
+    .single();
+
+  if (!portfolio) {
+    return { error: "포트폴리오를 찾을 수 없습니다." };
+  }
+
+  const { error } = await supabase.from("distributions").insert({
+    portfolio_id: portfolioId,
+    user_id: user.id,
+    amount,
+    distribution_type: distributionType,
+    record_date: recordDate,
+    payment_date: paymentDate,
+    memo,
+  } as never);
+
+  if (error) {
+    return { error: `분배금 등록 실패: ${error.message}` };
+  }
+
+  revalidatePath(`/trade/${portfolioId}`);
+  revalidatePath("/portfolio");
+  return { error: null };
+}
+
+export async function deleteDistribution(
+  distributionId: string,
+  portfolioId: string,
+): Promise<ActionState> {
+  const supabase = await createClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { error: "로그인이 필요합니다." };
+  }
+
+  const { error } = await supabase
+    .from("distributions")
+    .delete()
+    .eq("id", distributionId)
+    .eq("user_id", user.id);
+
+  if (error) {
+    return { error: `삭제 실패: ${error.message}` };
+  }
+
+  revalidatePath(`/trade/${portfolioId}`);
+  revalidatePath("/portfolio");
+  return { error: null };
+}
