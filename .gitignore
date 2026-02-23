@@ -45,6 +45,9 @@ next-env.d.ts
 *.swo
 *~
 
+# supabase
+supabase/.temp/
+
 # OS
 .DS_Store
 Thumbs.db
