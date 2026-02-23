@@ -4,8 +4,9 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import settings
-from app.routers import health, macro, prediction, sentiment, stock
+from app.routers import alert, health, macro, prediction, sentiment, stock
 from app.scheduler.jobs import start_scheduler, stop_scheduler
+from app.services import telegram_service
 from app.utils.logger import get_logger
 
 logger = get_logger(__name__)
@@ -19,8 +20,19 @@ async def lifespan(app: FastAPI):
         start_scheduler()
     else:
         logger.info("Scheduler disabled by SCHEDULER_ENABLED=false")
+
+    # Telegram bot
+    bot_app = telegram_service.build_bot_application()
+    if bot_app and settings.telegram_bot_enabled:
+        await telegram_service.start_bot()
+    else:
+        logger.info("Telegram bot disabled (token=%s, enabled=%s)",
+                     bool(settings.telegram_bot_token), settings.telegram_bot_enabled)
+
     yield
+
     # Shutdown
+    await telegram_service.stop_bot()
     stop_scheduler()
     logger.info("API shutdown complete")
 
@@ -47,3 +59,4 @@ app.include_router(macro.router)
 app.include_router(stock.router)
 app.include_router(sentiment.router)
 app.include_router(prediction.router)
+app.include_router(alert.router)

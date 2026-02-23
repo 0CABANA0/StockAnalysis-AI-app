@@ -4,8 +4,8 @@ from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.cron import CronTrigger
 
 from app.dependencies import get_supabase
+from app.services import alert_service, prediction_service
 from app.services.macro_collector import collect_macro_data
-from app.services import prediction_service
 from app.services.sentiment_service import collect_and_analyze
 from app.services.supabase_client import insert_snapshot
 from app.utils.logger import get_logger
@@ -105,12 +105,46 @@ def _scheduled_prediction_scoring():
         logger.error("Scheduled prediction scoring failed: %s", e)
 
 
+def _scheduled_price_alert_check():
+    """스케줄러에 의해 호출되는 가격 알림 체크 작업."""
+    logger.info("Scheduled price alert check started")
+    try:
+        client = get_supabase()
+        result = alert_service.check_price_alerts(client)
+        logger.info(
+            "Scheduled price alert check done — checked=%d, triggered=%d",
+            result.checked_count,
+            result.triggered_count,
+        )
+    except Exception as e:
+        logger.error("Scheduled price alert check failed: %s", e)
+
+
+def _scheduled_risk_alert_check():
+    """스케줄러에 의해 호출되는 리스크 조건 체크 작업."""
+    logger.info("Scheduled risk alert check started")
+    try:
+        client = get_supabase()
+        result = alert_service.check_risk_conditions(client)
+        logger.info(
+            "Scheduled risk check done — vix=%s, geo=%s, currency=%s, sent=%d",
+            result.vix_alert,
+            result.geopolitical_alert,
+            result.currency_alert,
+            result.notifications_sent,
+        )
+    except Exception as e:
+        logger.error("Scheduled risk alert check failed: %s", e)
+
+
 def start_scheduler():
     """스케줄러를 시작한다.
 
     - 거시 수집:     07:00 / 13:00 / 18:00 KST
     - 감성 분석:     08:00 / 14:00 / 19:00 KST (거시 +1h)
     - 통합 스코어링: 09:00 / 15:00 / 20:00 KST (감성 +1h)
+    - 리스크 알림:   09:30 / 15:30 / 20:30 KST (스코어링 +30m)
+    - 가격 알림:     07:00~23:50, 10분 간격
     """
     scheduler.add_job(
         _scheduled_macro_collect,
@@ -133,10 +167,29 @@ def start_scheduler():
         name="Prediction Scoring",
         replace_existing=True,
     )
+    scheduler.add_job(
+        _scheduled_price_alert_check,
+        trigger=CronTrigger(
+            hour="7-23", minute="*/10", timezone="Asia/Seoul",
+        ),
+        id="price_alert_check",
+        name="Price Alert Check",
+        replace_existing=True,
+    )
+    scheduler.add_job(
+        _scheduled_risk_alert_check,
+        trigger=CronTrigger(
+            hour="9,15,20", minute="30", timezone="Asia/Seoul",
+        ),
+        id="risk_alert_check",
+        name="Risk Alert Check",
+        replace_existing=True,
+    )
     scheduler.start()
     logger.info(
         "Scheduler started — macro 07/13/18, sentiment 08/14/19, "
-        "prediction 09/15/20 KST"
+        "prediction 09/15/20, risk 09:30/15:30/20:30, "
+        "price-alert every 10min (07~23) KST"
     )
 
 

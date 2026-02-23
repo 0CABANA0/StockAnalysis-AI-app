@@ -18,6 +18,7 @@ class Settings(BaseSettings):
     # Telegram (Day 5+)
     telegram_bot_token: str = ""
     telegram_chat_id: str = ""
+    telegram_bot_enabled: bool = False
 
     model_config = {"env_file": ".env", "env_file_encoding": "utf-8"}
 
