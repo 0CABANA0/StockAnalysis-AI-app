@@ -2,7 +2,7 @@ import type { MetadataRoute } from "next";
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const baseUrl =
-    process.env.NEXT_PUBLIC_APP_URL || "https://stock-intelligence.app";
+    process.env.NEXT_PUBLIC_APP_URL || "https://stock-intelligence-seven.vercel.app";
 
   const staticPages = [
     "",
