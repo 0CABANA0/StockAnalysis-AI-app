@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 
+import { serverApiFetch } from "@/lib/api/client";
 import { createClient } from "@/lib/supabase/server";
 
 export type ActionState = {
@@ -15,14 +16,14 @@ export async function addPriceAlert(
   const supabase = await createClient();
 
   const {
-    data: { user },
-  } = await supabase.auth.getUser();
+    data: { session },
+  } = await supabase.auth.getSession();
 
-  if (!user) {
+  if (!session?.access_token) {
     return { error: "로그인이 필요합니다." };
   }
 
-  const ticker = (formData.get("ticker") as string)?.trim().toUpperCase();
+  const ticker = (formData.get("ticker") as string)?.trim();
   const companyName = (formData.get("companyName") as string)?.trim() || null;
   const alertType = formData.get("alertType") as string;
   const triggerPriceRaw = formData.get("triggerPrice") as string;
@@ -37,17 +38,20 @@ export async function addPriceAlert(
     return { error: "유효한 가격을 입력해주세요." };
   }
 
-  const { error } = await supabase.from("price_alerts").insert({
-    user_id: user.id,
-    ticker,
-    company_name: companyName,
-    alert_type: alertType,
-    trigger_price: triggerPrice,
-    memo,
-  } as never);
-
-  if (error) {
-    return { error: `알림 추가 실패: ${error.message}` };
+  try {
+    await serverApiFetch("/alert/", session.access_token, {
+      method: "POST",
+      body: JSON.stringify({
+        ticker,
+        company_name: companyName,
+        alert_type: alertType,
+        trigger_price: triggerPrice,
+        memo,
+      }),
+    });
+  } catch (e) {
+    const message = e instanceof Error ? e.message : "알림 추가 실패";
+    return { error: message };
   }
 
   revalidatePath("/alerts");
@@ -59,21 +63,22 @@ export async function deletePriceAlert(alertId: string): Promise<ActionState> {
   const supabase = await createClient();
 
   const {
-    data: { user },
-  } = await supabase.auth.getUser();
+    data: { session },
+  } = await supabase.auth.getSession();
 
-  if (!user) {
+  if (!session?.access_token) {
     return { error: "로그인이 필요합니다." };
   }
 
-  const { error } = await supabase
-    .from("price_alerts")
-    .delete()
-    .eq("id", alertId)
-    .eq("user_id", user.id);
-
-  if (error) {
-    return { error: `삭제 실패: ${error.message}` };
+  try {
+    await serverApiFetch(
+      `/alert/${encodeURIComponent(alertId)}`,
+      session.access_token,
+      { method: "DELETE" },
+    );
+  } catch (e) {
+    const message = e instanceof Error ? e.message : "삭제 실패";
+    return { error: message };
   }
 
   revalidatePath("/alerts");

@@ -12,6 +12,7 @@ from app.models.portfolio import (
     PortfolioCreateRequest,
     PortfolioDetailResponse,
     PortfolioListResponse,
+    PortfolioResponse,
     TransactionCreateRequest,
     TransactionListResponse,
 )
@@ -36,6 +37,27 @@ def get_my_portfolios(
     """내 포트폴리오 목록 조회."""
     logger.info("포트폴리오 목록 조회: user=%s", user.user_id)
     return portfolio_service.get_user_portfolios(client, user.user_id)
+
+
+@router.get("/my/transactions", response_model=TransactionListResponse)
+def get_my_transactions(
+    user: CurrentUser = Depends(get_current_user),
+    client: Client = Depends(get_supabase),
+):
+    """내 전체 거래 내역 조회 (포트폴리오 무관)."""
+    logger.info("전체 거래 내역 조회: user=%s", user.user_id)
+    return portfolio_service.get_all_user_transactions(client, user.user_id)
+
+
+@router.get("/my/by-ticker/{ticker}", response_model=PortfolioResponse | None)
+def get_my_portfolio_by_ticker(
+    ticker: str,
+    user: CurrentUser = Depends(get_current_user),
+    client: Client = Depends(get_supabase),
+):
+    """ticker로 내 포트폴리오 조회."""
+    logger.info("ticker 포트폴리오 조회: user=%s, ticker=%s", user.user_id, ticker)
+    return portfolio_service.get_portfolio_by_ticker(client, user.user_id, ticker)
 
 
 @router.post("/", response_model=None, status_code=201)

@@ -72,7 +72,7 @@ def _fetch_foreign_etf(ticker: str, meta: dict) -> dict | None:
         return {
             "ticker": ticker,
             "name": meta["name"],
-            "asset_type": "ETF_US",
+            "asset_type": "FOREIGN_ETF",
             "category": meta["category"],
             "nav": float(nav) if nav else None,
             "ter": round(float(ter) * 100, 4) if ter else None,
@@ -191,7 +191,7 @@ def sync_domestic_etfs(client: Client) -> tuple[int, list[str]]:
             data = {
                 "ticker": ticker,
                 "name": name,
-                "asset_type": "ETF_KR",
+                "asset_type": "DOMESTIC_ETF",
                 "category": _classify_domestic_category(name),
                 "nav": nav,
                 "currency": "KRW",
@@ -273,6 +273,7 @@ def list_etf_funds(
     asset_type: str | None = None,
     category: str | None = None,
     min_aum: float | None = None,
+    is_active: bool | None = None,
     sort_by: str = "name",
     sort_desc: bool = False,
     limit: int = 20,
@@ -287,6 +288,8 @@ def list_etf_funds(
         count_query = count_query.eq("category", category)
     if min_aum is not None:
         count_query = count_query.gte("aum", min_aum)
+    if is_active is not None:
+        count_query = count_query.eq("is_active", is_active)
     count_result = count_query.execute()
     total = count_result.count or 0
 
@@ -298,6 +301,8 @@ def list_etf_funds(
         query = query.eq("category", category)
     if min_aum is not None:
         query = query.gte("aum", min_aum)
+    if is_active is not None:
+        query = query.eq("is_active", is_active)
 
     query = query.order(sort_by, desc=sort_desc)
     query = query.range(offset, offset + limit - 1)

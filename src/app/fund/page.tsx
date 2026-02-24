@@ -2,6 +2,7 @@ import { Landmark } from "lucide-react";
 
 import { Header } from "@/components/layout/header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { serverApiFetch } from "@/lib/api/client";
 import { createClient } from "@/lib/supabase/server";
 import { EtfFundTable } from "@/components/etf-fund/etf-fund-table";
 import type { EtfFundMaster } from "@/types";
@@ -10,18 +11,33 @@ export const metadata = {
   title: "펀드 | StockAnalysis AI",
 };
 
+interface EtfListResponse {
+  items: EtfFundMaster[];
+  total: number;
+  limit: number;
+  offset: number;
+}
+
 export default async function FundPage() {
   const supabase = await createClient();
 
-  const { data: funds } = await supabase
-    .from("etf_fund_master")
-    .select("*")
-    .eq("asset_type", "DOMESTIC_FUND")
-    .eq("is_active", true)
-    .order("aum", { ascending: false, nullsFirst: false })
-    .returns<EtfFundMaster[]>();
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
 
-  const allFunds = funds ?? [];
+  let allFunds: EtfFundMaster[] = [];
+
+  if (session?.access_token) {
+    try {
+      const result = await serverApiFetch<EtfListResponse>(
+        "/etf/list?asset_type=DOMESTIC_FUND&is_active=true&sort_by=aum&sort_desc=true&limit=200",
+        session.access_token,
+      );
+      allFunds = result.items;
+    } catch {
+      // API 에러 — 빈 상태 표시
+    }
+  }
 
   return (
     <div className="min-h-screen">

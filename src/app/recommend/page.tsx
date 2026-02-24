@@ -2,6 +2,7 @@ import { Sparkles, TrendingUp } from "lucide-react";
 
 import { Header } from "@/components/layout/header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { serverApiFetch } from "@/lib/api/client";
 import { createClient } from "@/lib/supabase/server";
 import { RecommendationsTable } from "@/components/recommend/recommendations-table";
 import type { Recommendation } from "@/types";
@@ -10,17 +11,32 @@ export const metadata = {
   title: "추천 | StockAnalysis AI",
 };
 
+interface RecommendationApiResponse {
+  recommendations: Recommendation[];
+  total: number;
+}
+
 export default async function RecommendPage() {
   const supabase = await createClient();
 
-  const { data: recommendations } = await supabase
-    .from("recommendations")
-    .select("*")
-    .eq("is_active", true)
-    .order("created_at", { ascending: false })
-    .returns<Recommendation[]>();
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
 
-  const allRecs = recommendations ?? [];
+  let allRecs: Recommendation[] = [];
+
+  if (session?.access_token) {
+    try {
+      const result = await serverApiFetch<RecommendationApiResponse>(
+        "/recommendation/active?limit=100",
+        session.access_token,
+      );
+      allRecs = result.recommendations;
+    } catch {
+      // API 에러 — 빈 상태 표시
+    }
+  }
+
   const activeCount = allRecs.length;
   const highConfidenceCount = allRecs.filter(
     (r) => r.confidence_score !== null && r.confidence_score >= 0.7,
