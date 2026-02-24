@@ -10,6 +10,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { serverApiFetch } from "@/lib/api/client";
 import { createClient } from "@/lib/supabase/server";
 import type { AuditLog } from "@/types";
 
@@ -26,17 +27,31 @@ const actionBadge: Record<
   ROLE_CHANGE: "secondary",
 };
 
+interface AuditLogsListResponse {
+  logs: AuditLog[];
+  total: number;
+}
+
 export default async function AdminAuditPage() {
   const supabase = await createClient();
 
-  const { data: logs } = await supabase
-    .from("audit_logs")
-    .select("*")
-    .order("created_at", { ascending: false })
-    .limit(100)
-    .returns<AuditLog[]>();
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
 
-  const allLogs = logs ?? [];
+  let allLogs: AuditLog[] = [];
+
+  if (session?.access_token) {
+    try {
+      const result = await serverApiFetch<AuditLogsListResponse>(
+        "/admin/audit-logs?limit=100",
+        session.access_token,
+      );
+      allLogs = result.logs;
+    } catch {
+      // API 에러 — 빈 상태 표시
+    }
+  }
 
   return (
     <div className="min-h-screen">

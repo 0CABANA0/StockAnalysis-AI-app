@@ -13,6 +13,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
+import { serverApiFetch } from "@/lib/api/client";
 import { createClient } from "@/lib/supabase/server";
 import type { NotificationGroup } from "@/types";
 
@@ -20,23 +21,33 @@ export const metadata = {
   title: "알림 관리 | StockAnalysis AI",
 };
 
+interface NotificationGroupsResponse {
+  groups: NotificationGroup[];
+  active_target_count: number;
+}
+
 export default async function AdminNotificationsPage() {
   const supabase = await createClient();
 
-  const [groupsResult, targetsResult] = await Promise.all([
-    supabase
-      .from("notification_groups")
-      .select("*")
-      .order("created_at", { ascending: false })
-      .returns<NotificationGroup[]>(),
-    supabase
-      .from("notification_targets")
-      .select("id", { count: "exact", head: true })
-      .eq("is_active", true),
-  ]);
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
 
-  const groups = groupsResult.data ?? [];
-  const activeTargetCount = targetsResult.count ?? 0;
+  let groups: NotificationGroup[] = [];
+  let activeTargetCount = 0;
+
+  if (session?.access_token) {
+    try {
+      const result = await serverApiFetch<NotificationGroupsResponse>(
+        "/admin/notifications/groups",
+        session.access_token,
+      );
+      groups = result.groups;
+      activeTargetCount = result.active_target_count;
+    } catch {
+      // API 에러 — 빈 상태 표시
+    }
+  }
 
   return (
     <div className="min-h-screen">
