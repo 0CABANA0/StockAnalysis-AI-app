@@ -45,3 +45,34 @@ export async function apiFetch<T>(
 
   return res.json();
 }
+
+/**
+ * 서버 사이드 전용 API 클라이언트.
+ * Server Actions / 서버 컴포넌트에서 Backend API를 호출할 때 사용.
+ * 브라우저 Supabase 클라이언트를 import하지 않아 서버 환경에서 안전하다.
+ */
+export async function serverApiFetch<T>(
+  path: string,
+  token: string,
+  options?: RequestInit,
+): Promise<T> {
+  const url = `${API_BASE}${path}`;
+
+  const res = await fetch(url, {
+    ...options,
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+      ...options?.headers,
+    },
+  });
+
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error(
+      body.detail ?? `API 요청 실패: ${res.status} ${res.statusText}`,
+    );
+  }
+
+  return res.json();
+}

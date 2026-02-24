@@ -19,7 +19,7 @@ logger = get_logger(__name__)
 router = APIRouter(prefix="/api/etf", tags=["etf"])
 
 VALID_SORT_FIELDS = {"name", "ticker", "nav", "ter", "aum", "category", "updated_at"}
-VALID_ASSET_TYPES = {"ETF_KR", "ETF_US", "FUND"}
+VALID_ASSET_TYPES = {"DOMESTIC_ETF", "FOREIGN_ETF", "DOMESTIC_FUND"}
 
 
 # ─── 정적 경로를 {ticker} 앞에 정의 ───
@@ -66,12 +66,13 @@ def get_macro_suggestions(
 
 @router.get("/list", response_model=EtfListResponse)
 def get_etf_list(
-    asset_type: str | None = Query(default=None, description="자산 유형 (ETF_KR, ETF_US, FUND)"),
+    asset_type: str | None = Query(default=None, description="자산 유형 (DOMESTIC_ETF, FOREIGN_ETF, DOMESTIC_FUND)"),
     category: str | None = Query(default=None, description="카테고리"),
     min_aum: float | None = Query(default=None, description="최소 AUM"),
+    is_active: bool | None = Query(default=None, description="활성 여부"),
     sort_by: str = Query(default="name", description="정렬 기준"),
     sort_desc: bool = Query(default=False, description="내림차순 여부"),
-    limit: int = Query(default=20, ge=1, le=100, description="페이지 크기"),
+    limit: int = Query(default=20, ge=1, le=500, description="페이지 크기"),
     offset: int = Query(default=0, ge=0, description="오프셋"),
     _user: CurrentUser = Depends(get_current_user),
     client: Client = Depends(get_supabase),
@@ -94,6 +95,7 @@ def get_etf_list(
             asset_type=asset_type,
             category=category,
             min_aum=min_aum,
+            is_active=is_active,
             sort_by=sort_by,
             sort_desc=sort_desc,
             limit=limit,

@@ -2,6 +2,7 @@ import { Bell, BellRing } from "lucide-react";
 
 import { Header } from "@/components/layout/header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { serverApiFetch } from "@/lib/api/client";
 import { createClient } from "@/lib/supabase/server";
 import { AlertsTable } from "@/components/alerts/alerts-table";
 import { AddAlertDialog } from "@/components/alerts/add-alert-dialog";
@@ -11,21 +12,32 @@ export const metadata = {
   title: "알림 | StockAnalysis AI",
 };
 
+interface PriceAlertsApiResponse {
+  alerts: PriceAlert[];
+  total: number;
+}
+
 export default async function AlertsPage() {
   const supabase = await createClient();
 
   const {
-    data: { user },
-  } = await supabase.auth.getUser();
+    data: { session },
+  } = await supabase.auth.getSession();
 
-  const { data: alerts } = await supabase
-    .from("price_alerts")
-    .select("*")
-    .eq("user_id", user!.id)
-    .order("created_at", { ascending: false })
-    .returns<PriceAlert[]>();
+  let allAlerts: PriceAlert[] = [];
 
-  const allAlerts = alerts ?? [];
+  if (session?.access_token) {
+    try {
+      const result = await serverApiFetch<PriceAlertsApiResponse>(
+        "/alert/my",
+        session.access_token,
+      );
+      allAlerts = result.alerts;
+    } catch {
+      // API 에러 — 빈 상태 표시
+    }
+  }
+
   const activeCount = allAlerts.filter((a) => !a.is_triggered).length;
   const triggeredCount = allAlerts.filter((a) => a.is_triggered).length;
 

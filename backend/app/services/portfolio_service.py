@@ -113,6 +113,24 @@ def get_user_portfolios(client: Client, user_id: str) -> PortfolioListResponse:
     return PortfolioListResponse(portfolios=portfolios, total=len(portfolios))
 
 
+def get_portfolio_by_ticker(
+    client: Client, user_id: str, ticker: str
+) -> PortfolioResponse | None:
+    """ticker로 사용자의 활성 포트폴리오 1건 조회."""
+    resp = (
+        client.table("portfolio")
+        .select("*")
+        .eq("user_id", user_id)
+        .eq("ticker", ticker.upper())
+        .eq("is_deleted", False)
+        .limit(1)
+        .execute()
+    )
+    if not resp.data:
+        return None
+    return _row_to_portfolio(resp.data[0])
+
+
 def get_portfolio_detail(
     client: Client, user_id: str, portfolio_id: str
 ) -> PortfolioDetailResponse | None:
@@ -216,6 +234,21 @@ def soft_delete_portfolio(
 # ──────────────────────────────────────────────
 # (B) 거래 CRUD
 # ──────────────────────────────────────────────
+
+
+def get_all_user_transactions(
+    client: Client, user_id: str
+) -> TransactionListResponse:
+    """사용자의 모든 거래 (포트폴리오 무관) 조회."""
+    resp = (
+        client.table("transactions")
+        .select("*")
+        .eq("user_id", user_id)
+        .order("trade_date", desc=False)
+        .execute()
+    )
+    transactions = [_row_to_transaction(r) for r in resp.data]
+    return TransactionListResponse(transactions=transactions, total=len(transactions))
 
 
 def get_transactions(

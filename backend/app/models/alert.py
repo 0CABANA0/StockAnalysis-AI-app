@@ -2,7 +2,44 @@
 
 from datetime import datetime
 
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator
+
+
+class PriceAlertCreateRequest(BaseModel):
+    """가격 알림 생성 요청."""
+
+    ticker: str
+    company_name: str | None = None
+    alert_type: str  # TARGET_PRICE | STOP_LOSS
+    trigger_price: float
+    memo: str | None = None
+
+    @field_validator("ticker")
+    @classmethod
+    def normalize_ticker(cls, v: str) -> str:
+        return v.strip().upper()
+
+    @field_validator("alert_type")
+    @classmethod
+    def validate_alert_type(cls, v: str) -> str:
+        allowed = {"TARGET_PRICE", "STOP_LOSS"}
+        if v not in allowed:
+            raise ValueError(f"alert_type은 {allowed} 중 하나여야 합니다.")
+        return v
+
+    @field_validator("trigger_price")
+    @classmethod
+    def validate_trigger_price(cls, v: float) -> float:
+        if v <= 0:
+            raise ValueError("trigger_price는 0보다 커야 합니다.")
+        return v
+
+
+class DeleteResponse(BaseModel):
+    """삭제 결과 응답."""
+
+    success: bool = True
+    message: str
 
 
 class PriceAlertResponse(BaseModel):

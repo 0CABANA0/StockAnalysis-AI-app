@@ -1,5 +1,6 @@
 import { Header } from "@/components/layout/header";
 import { PortfolioContent } from "@/components/portfolio/portfolio-content";
+import { serverApiFetch } from "@/lib/api/client";
 import { createClient } from "@/lib/supabase/server";
 import type { Portfolio, Transaction } from "@/types";
 
@@ -7,36 +8,51 @@ export const metadata = {
   title: "포트폴리오 | StockAnalysis AI",
 };
 
+interface PortfolioListResponse {
+  portfolios: Portfolio[];
+  total: number;
+}
+
+interface TransactionListResponse {
+  transactions: Transaction[];
+  total: number;
+}
+
 export default async function PortfolioPage() {
   const supabase = await createClient();
 
   const {
-    data: { user },
-  } = await supabase.auth.getUser();
+    data: { session },
+  } = await supabase.auth.getSession();
 
-  // 삭제되지 않은 포트폴리오 조회
-  const { data: portfolios } = await supabase
-    .from("portfolio")
-    .select("*")
-    .eq("user_id", user!.id)
-    .eq("is_deleted", false)
-    .order("created_at", { ascending: true })
-    .returns<Portfolio[]>();
+  let portfolios: Portfolio[] = [];
+  let allTransactions: Transaction[] = [];
 
-  // 전체 거래 조회
-  const { data: allTransactions } = await supabase
-    .from("transactions")
-    .select("*")
-    .eq("user_id", user!.id)
-    .order("trade_date", { ascending: true })
-    .returns<Transaction[]>();
+  if (session?.access_token) {
+    try {
+      const [portfolioResult, txResult] = await Promise.all([
+        serverApiFetch<PortfolioListResponse>(
+          "/portfolio/my",
+          session.access_token,
+        ),
+        serverApiFetch<TransactionListResponse>(
+          "/portfolio/my/transactions",
+          session.access_token,
+        ),
+      ]);
+      portfolios = portfolioResult.portfolios;
+      allTransactions = txResult.transactions;
+    } catch {
+      // API 에러 — 빈 상태 표시
+    }
+  }
 
   return (
     <div className="min-h-screen">
       <Header />
       <PortfolioContent
-        portfolios={portfolios ?? []}
-        transactions={allTransactions ?? []}
+        portfolios={portfolios}
+        transactions={allTransactions}
       />
     </div>
   );

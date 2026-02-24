@@ -3,6 +3,7 @@ import { FileText, TrendingUp, TrendingDown, Minus } from "lucide-react";
 import { Header } from "@/components/layout/header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { serverApiFetch } from "@/lib/api/client";
 import { createClient } from "@/lib/supabase/server";
 import type { PredictionScore } from "@/types";
 
@@ -76,19 +77,23 @@ export default async function ReportPage({
   const decodedTicker = decodeURIComponent(ticker).toUpperCase();
 
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
 
-  const { data: score } = await supabase
-    .from("prediction_scores")
-    .select("*")
-    .eq("user_id", user!.id)
-    .eq("ticker", decodedTicker)
-    .order("analyzed_at", { ascending: false })
-    .limit(1)
-    .returns<PredictionScore[]>()
-    .maybeSingle();
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+
+  let score: PredictionScore | null = null;
+
+  if (session?.access_token) {
+    try {
+      score = await serverApiFetch<PredictionScore>(
+        `/prediction/${encodeURIComponent(decodedTicker)}/latest`,
+        session.access_token,
+      );
+    } catch {
+      // 404 또는 에러 — 데이터 없음 상태 표시
+    }
+  }
 
   const dir = directionConfig[score?.direction ?? "NEUTRAL"];
   const risk = riskConfig[score?.risk_level ?? "LOW"];

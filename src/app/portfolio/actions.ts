@@ -3,6 +3,8 @@
 import { revalidatePath } from "next/cache";
 
 import { createClient } from "@/lib/supabase/server";
+import { serverApiFetch } from "@/lib/api/client";
+import type { PortfolioResponse, DeleteResponse } from "@/lib/api/portfolio";
 
 export type ActionState = {
   error: string | null;
@@ -15,14 +17,14 @@ export async function addPortfolio(
   const supabase = await createClient();
 
   const {
-    data: { user },
-  } = await supabase.auth.getUser();
+    data: { session },
+  } = await supabase.auth.getSession();
 
-  if (!user) {
+  if (!session?.access_token) {
     return { error: "로그인이 필요합니다." };
   }
 
-  const ticker = (formData.get("ticker") as string)?.trim().toUpperCase();
+  const ticker = (formData.get("ticker") as string)?.trim();
   const companyName = (formData.get("companyName") as string)?.trim();
   const market = formData.get("market") as string;
   const sector = (formData.get("sector") as string)?.trim() || null;
@@ -32,31 +34,21 @@ export async function addPortfolio(
     return { error: "티커, 종목명, 시장은 필수 입력입니다." };
   }
 
-  // 중복 체크 (삭제되지 않은 종목)
-  const { data: existing } = await supabase
-    .from("portfolio")
-    .select("id")
-    .eq("user_id", user.id)
-    .eq("ticker", ticker)
-    .eq("is_deleted", false)
-    .returns<{ id: string }[]>()
-    .single();
-
-  if (existing) {
-    return { error: `이미 등록된 종목입니다: ${ticker}` };
-  }
-
-  const { error } = await supabase.from("portfolio").insert({
-    user_id: user.id,
-    ticker,
-    company_name: companyName,
-    market,
-    sector,
-    memo,
-  } as never);
-
-  if (error) {
-    return { error: `종목 추가 실패: ${error.message}` };
+  try {
+    await serverApiFetch<PortfolioResponse>("/portfolio/", session.access_token, {
+      method: "POST",
+      body: JSON.stringify({
+        ticker,
+        company_name: companyName,
+        market,
+        sector,
+        memo,
+      }),
+    });
+  } catch (err) {
+    return {
+      error: err instanceof Error ? err.message : "종목 추가 실패",
+    };
   }
 
   revalidatePath("/portfolio");
@@ -69,22 +61,23 @@ export async function deletePortfolio(
   const supabase = await createClient();
 
   const {
-    data: { user },
-  } = await supabase.auth.getUser();
+    data: { session },
+  } = await supabase.auth.getSession();
 
-  if (!user) {
+  if (!session?.access_token) {
     return { error: "로그인이 필요합니다." };
   }
 
-  // soft delete
-  const { error } = await supabase
-    .from("portfolio")
-    .update({ is_deleted: true } as never)
-    .eq("id", portfolioId)
-    .eq("user_id", user.id);
-
-  if (error) {
-    return { error: `삭제 실패: ${error.message}` };
+  try {
+    await serverApiFetch<DeleteResponse>(
+      `/portfolio/${encodeURIComponent(portfolioId)}`,
+      session.access_token,
+      { method: "DELETE" },
+    );
+  } catch (err) {
+    return {
+      error: err instanceof Error ? err.message : "삭제 실패",
+    };
   }
 
   revalidatePath("/portfolio");

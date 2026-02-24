@@ -10,6 +10,8 @@ from supabase import Client
 
 from app.models.alert import (
     AlertCheckResult,
+    DeleteResponse,
+    PriceAlertCreateRequest,
     PriceAlertResponse,
     PriceAlertsListResponse,
     RiskAlertResult,
@@ -296,3 +298,67 @@ def get_user_alerts(client: Client, user_id: str) -> PriceAlertsListResponse:
     ]
 
     return PriceAlertsListResponse(alerts=alerts, total=len(alerts))
+
+
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# (D) 가격 알림 생성 / 삭제
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+
+def create_price_alert(
+    client: Client, user_id: str, req: PriceAlertCreateRequest
+) -> PriceAlertResponse:
+    """가격 알림을 생성한다."""
+    result = (
+        client.table("price_alerts")
+        .insert(
+            {
+                "user_id": user_id,
+                "ticker": req.ticker,
+                "company_name": req.company_name,
+                "alert_type": req.alert_type,
+                "trigger_price": req.trigger_price,
+                "memo": req.memo,
+            }
+        )
+        .execute()
+    )
+
+    row = result.data[0]
+    logger.info("Price alert created: user=%s, ticker=%s", user_id, req.ticker)
+
+    return PriceAlertResponse(
+        id=row["id"],
+        user_id=row["user_id"],
+        ticker=row["ticker"],
+        company_name=row.get("company_name"),
+        alert_type=row["alert_type"],
+        trigger_price=float(row["trigger_price"]),
+        current_price=float(row["current_price"]) if row.get("current_price") else None,
+        is_triggered=row.get("is_triggered", False),
+        triggered_at=row.get("triggered_at"),
+        memo=row.get("memo"),
+        created_at=row["created_at"],
+    )
+
+
+def delete_price_alert(client: Client, user_id: str, alert_id: str) -> DeleteResponse:
+    """가격 알림을 삭제한다. 본인 소유만 삭제 가능."""
+    # 소유권 확인
+    check = (
+        client.table("price_alerts")
+        .select("id")
+        .eq("id", alert_id)
+        .eq("user_id", user_id)
+        .execute()
+    )
+
+    if not check.data:
+        raise ValueError("알림을 찾을 수 없거나 삭제 권한이 없습니다.")
+
+    client.table("price_alerts").delete().eq("id", alert_id).eq(
+        "user_id", user_id
+    ).execute()
+
+    logger.info("Price alert deleted: user=%s, alert_id=%s", user_id, alert_id)
+    return DeleteResponse(success=True, message="알림이 삭제되었습니다.")

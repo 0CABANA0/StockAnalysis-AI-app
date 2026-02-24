@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 
 import { Header } from "@/components/layout/header";
 import { TradeContent } from "@/components/portfolio/trade-content";
+import { serverApiFetch } from "@/lib/api/client";
 import { createClient } from "@/lib/supabase/server";
 import type { Distribution, Portfolio, Transaction } from "@/types";
 
@@ -30,6 +31,19 @@ export async function generateMetadata({
   };
 }
 
+interface PortfolioDetailApiResponse {
+  portfolio: Portfolio;
+  transactions: Transaction[];
+  distributions: Distribution[];
+  stats: {
+    avg_price: number;
+    quantity: number;
+    total_invested: number;
+    total_fees: number;
+    realized_pnl: number;
+  };
+}
+
 export default async function TradePage({
   params,
 }: {
@@ -39,36 +53,20 @@ export default async function TradePage({
   const supabase = await createClient();
 
   const {
-    data: { user },
-  } = await supabase.auth.getUser();
+    data: { session },
+  } = await supabase.auth.getSession();
 
-  // 포트폴리오 + 거래 + 분배금 병렬 조회
-  const [portfolioResult, txResult, distResult] = await Promise.all([
-    supabase
-      .from("portfolio")
-      .select("*")
-      .eq("id", id)
-      .eq("user_id", user!.id)
-      .eq("is_deleted", false)
-      .returns<Portfolio[]>()
-      .single(),
-    supabase
-      .from("transactions")
-      .select("*")
-      .eq("portfolio_id", id)
-      .eq("user_id", user!.id)
-      .order("trade_date", { ascending: true })
-      .returns<Transaction[]>(),
-    supabase
-      .from("distributions")
-      .select("*")
-      .eq("portfolio_id", id)
-      .eq("user_id", user!.id)
-      .order("record_date", { ascending: true })
-      .returns<Distribution[]>(),
-  ]);
+  if (!session?.access_token) {
+    notFound();
+  }
 
-  if (!portfolioResult.data) {
+  let detail: PortfolioDetailApiResponse;
+  try {
+    detail = await serverApiFetch<PortfolioDetailApiResponse>(
+      `/portfolio/${encodeURIComponent(id)}/detail`,
+      session.access_token,
+    );
+  } catch {
     notFound();
   }
 
@@ -76,9 +74,9 @@ export default async function TradePage({
     <div className="min-h-screen">
       <Header />
       <TradeContent
-        portfolio={portfolioResult.data}
-        transactions={txResult.data ?? []}
-        distributions={distResult.data ?? []}
+        portfolio={detail.portfolio}
+        transactions={detail.transactions}
+        distributions={detail.distributions}
       />
     </div>
   );

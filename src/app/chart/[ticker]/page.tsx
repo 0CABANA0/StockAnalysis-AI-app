@@ -3,6 +3,7 @@ import { Badge } from "@/components/ui/badge";
 import { StockChart } from "@/components/charts/stock-chart";
 import { IndicatorCards } from "@/components/charts/indicator-cards";
 import { QuoteCard } from "@/components/charts/quote-card";
+import { serverApiFetch } from "@/lib/api/client";
 import { createClient } from "@/lib/supabase/server";
 import type { Portfolio } from "@/types";
 
@@ -12,7 +13,7 @@ export async function generateMetadata({
   params: Promise<{ ticker: string }>;
 }) {
   const { ticker } = await params;
-  return { title: `${ticker} 차트 | StockAnalysis AI` };
+  return { title: `${decodeURIComponent(ticker).toUpperCase()} 차트 | StockAnalysis AI` };
 }
 
 export default async function ChartPage({
@@ -24,19 +25,23 @@ export default async function ChartPage({
   const decodedTicker = decodeURIComponent(ticker).toUpperCase();
 
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
 
-  // 포트폴리오에서 종목 정보 조회
-  const { data: portfolio } = await supabase
-    .from("portfolio")
-    .select("*")
-    .eq("user_id", user!.id)
-    .eq("ticker", decodedTicker)
-    .eq("is_deleted", false)
-    .returns<Portfolio[]>()
-    .maybeSingle();
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+
+  let portfolio: Portfolio | null = null;
+
+  if (session?.access_token) {
+    try {
+      portfolio = await serverApiFetch<Portfolio | null>(
+        `/portfolio/my/by-ticker/${encodeURIComponent(decodedTicker)}`,
+        session.access_token,
+      );
+    } catch {
+      // 포트폴리오 미등록 종목 — null 유지
+    }
+  }
 
   return (
     <div className="min-h-screen">
