@@ -19,13 +19,20 @@ import {
   type HoldingStats,
   type UnrealizedPnL,
 } from "@/lib/portfolio/calculations";
-import type { MarketType } from "@/types";
+import type { AccountType, MarketType } from "@/types";
+
+const ACCOUNT_LABEL: Record<AccountType, string> = {
+  GENERAL: "일반",
+  ISA: "ISA",
+  PENSION: "연금저축",
+};
 
 export interface HoldingRow {
   id: string;
   ticker: string;
   companyName: string;
   market: MarketType;
+  accountType: AccountType;
   sector: string | null;
   stats: HoldingStats;
   pnl: UnrealizedPnL;
@@ -92,6 +99,7 @@ export function HoldingsTable({ holdings }: HoldingsTableProps) {
             종목{sortIndicator("ticker")}
           </TableHead>
           <TableHead>시장</TableHead>
+          <TableHead>계좌</TableHead>
           <TableHead className="text-right">평균 매수가</TableHead>
           <TableHead className="text-right">보유 수량</TableHead>
           <TableHead className="text-right">현재가</TableHead>
@@ -123,6 +131,9 @@ export function HoldingsTable({ holdings }: HoldingsTableProps) {
             </TableCell>
             <TableCell>
               <Badge variant="secondary">{h.market}</Badge>
+            </TableCell>
+            <TableCell>
+              <Badge variant="outline">{ACCOUNT_LABEL[h.accountType]}</Badge>
             </TableCell>
             <TableCell className="text-right">
               {formatCurrency(h.stats.avgPrice, h.market)}

@@ -27,6 +27,7 @@ export async function addPortfolio(
   const ticker = (formData.get("ticker") as string)?.trim();
   const companyName = (formData.get("companyName") as string)?.trim();
   const market = formData.get("market") as string;
+  const accountType = (formData.get("accountType") as string) || "GENERAL";
   const sector = (formData.get("sector") as string)?.trim() || null;
   const memo = (formData.get("memo") as string)?.trim() || null;
 
@@ -41,6 +42,7 @@ export async function addPortfolio(
         ticker,
         company_name: companyName,
         market,
+        account_type: accountType,
         sector,
         memo,
       }),

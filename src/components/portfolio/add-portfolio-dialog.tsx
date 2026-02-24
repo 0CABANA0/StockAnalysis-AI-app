@@ -30,6 +30,7 @@ const initialState: ActionState = { error: null };
 export function AddPortfolioDialog() {
   const [open, setOpen] = useState(false);
   const [market, setMarket] = useState("");
+  const [accountType, setAccountType] = useState("GENERAL");
   const formRef = useRef<HTMLFormElement>(null);
 
   const [state, formAction, isPending] = useActionState(
@@ -41,6 +42,7 @@ export function AddPortfolioDialog() {
         toast.success("종목이 추가되었습니다.");
         setOpen(false);
         setMarket("");
+        setAccountType("GENERAL");
         formRef.current?.reset();
       }
       return result;
@@ -101,6 +103,23 @@ export function AddPortfolioDialog() {
               </SelectContent>
             </Select>
             <input type="hidden" name="market" value={market} />
+          </div>
+          <div className="space-y-2">
+            <Label>계좌 유형</Label>
+            <Select
+              value={accountType}
+              onValueChange={setAccountType}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="계좌 유형 선택" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="GENERAL">일반</SelectItem>
+                <SelectItem value="ISA">ISA</SelectItem>
+                <SelectItem value="PENSION">연금저축</SelectItem>
+              </SelectContent>
+            </Select>
+            <input type="hidden" name="accountType" value={accountType} />
           </div>
           <div className="space-y-2">
             <Label htmlFor="sector">섹터</Label>

@@ -99,33 +99,37 @@ def _calculate_holding_stats(transactions: list[dict]) -> HoldingStats:
 # ──────────────────────────────────────────────
 
 
-def get_user_portfolios(client: Client, user_id: str) -> PortfolioListResponse:
-    """사용자의 활성 포트폴리오 목록 조회."""
-    resp = (
+def get_user_portfolios(
+    client: Client, user_id: str, account_type: str | None = None
+) -> PortfolioListResponse:
+    """사용자의 활성 포트폴리오 목록 조회. account_type 필터 옵션."""
+    query = (
         client.table("portfolio")
         .select("*")
         .eq("user_id", user_id)
         .eq("is_deleted", False)
-        .order("created_at", desc=False)
-        .execute()
     )
+    if account_type:
+        query = query.eq("account_type", account_type)
+    resp = query.order("created_at", desc=False).execute()
     portfolios = [_row_to_portfolio(r) for r in resp.data]
     return PortfolioListResponse(portfolios=portfolios, total=len(portfolios))
 
 
 def get_portfolio_by_ticker(
-    client: Client, user_id: str, ticker: str
+    client: Client, user_id: str, ticker: str, account_type: str | None = None
 ) -> PortfolioResponse | None:
-    """ticker로 사용자의 활성 포트폴리오 1건 조회."""
-    resp = (
+    """ticker로 사용자의 활성 포트폴리오 1건 조회. account_type 필터 옵션."""
+    query = (
         client.table("portfolio")
         .select("*")
         .eq("user_id", user_id)
         .eq("ticker", ticker.upper())
         .eq("is_deleted", False)
-        .limit(1)
-        .execute()
     )
+    if account_type:
+        query = query.eq("account_type", account_type)
+    resp = query.limit(1).execute()
     if not resp.data:
         return None
     return _row_to_portfolio(resp.data[0])
@@ -186,26 +190,29 @@ def get_portfolio_detail(
 def create_portfolio(
     client: Client, user_id: str, req: PortfolioCreateRequest
 ) -> PortfolioResponse:
-    """포트폴리오 종목 추가. ticker 대문자 정규화 + 중복 체크."""
+    """포트폴리오 종목 추가. ticker 대문자 정규화 + 계좌유형별 중복 체크."""
     ticker = req.ticker.strip().upper()
+    account_type = req.account_type.value
 
-    # 중복 체크 (동일 사용자 + 동일 ticker + 활성)
+    # 중복 체크 (동일 사용자 + 동일 ticker + 동일 계좌유형 + 활성)
     dup_resp = (
         client.table("portfolio")
         .select("id")
         .eq("user_id", user_id)
         .eq("ticker", ticker)
+        .eq("account_type", account_type)
         .eq("is_deleted", False)
         .execute()
     )
     if dup_resp.data:
-        raise ValueError(f"이미 등록된 종목입니다: {ticker}")
+        raise ValueError(f"이미 등록된 종목입니다: {ticker} ({account_type})")
 
     row = {
         "user_id": user_id,
         "ticker": ticker,
         "company_name": req.company_name,
         "market": req.market.value,
+        "account_type": account_type,
         "sector": req.sector,
         "industry": req.industry,
         "memo": req.memo,

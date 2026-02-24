@@ -1,6 +1,6 @@
 """포트폴리오 / 거래 / 분배금 API 엔드포인트."""
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from supabase import Client
 
 from app.dependencies import get_supabase
@@ -31,12 +31,13 @@ router = APIRouter(prefix="/api/portfolio", tags=["portfolio"])
 
 @router.get("/my", response_model=PortfolioListResponse)
 def get_my_portfolios(
+    account_type: str | None = Query(default=None),
     user: CurrentUser = Depends(get_current_user),
     client: Client = Depends(get_supabase),
 ):
-    """내 포트폴리오 목록 조회."""
-    logger.info("포트폴리오 목록 조회: user=%s", user.user_id)
-    return portfolio_service.get_user_portfolios(client, user.user_id)
+    """내 포트폴리오 목록 조회. account_type 필터 옵션."""
+    logger.info("포트폴리오 목록 조회: user=%s, account_type=%s", user.user_id, account_type)
+    return portfolio_service.get_user_portfolios(client, user.user_id, account_type)
 
 
 @router.get("/my/transactions", response_model=TransactionListResponse)
@@ -52,12 +53,13 @@ def get_my_transactions(
 @router.get("/my/by-ticker/{ticker}", response_model=PortfolioResponse | None)
 def get_my_portfolio_by_ticker(
     ticker: str,
+    account_type: str | None = Query(default=None),
     user: CurrentUser = Depends(get_current_user),
     client: Client = Depends(get_supabase),
 ):
-    """ticker로 내 포트폴리오 조회."""
-    logger.info("ticker 포트폴리오 조회: user=%s, ticker=%s", user.user_id, ticker)
-    return portfolio_service.get_portfolio_by_ticker(client, user.user_id, ticker)
+    """ticker로 내 포트폴리오 조회. account_type 필터 옵션."""
+    logger.info("ticker 포트폴리오 조회: user=%s, ticker=%s, account_type=%s", user.user_id, ticker, account_type)
+    return portfolio_service.get_portfolio_by_ticker(client, user.user_id, ticker, account_type)
 
 
 @router.post("/", response_model=None, status_code=201)

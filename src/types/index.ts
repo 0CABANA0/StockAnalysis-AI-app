@@ -32,6 +32,8 @@ export type AssetType = "DOMESTIC_ETF" | "FOREIGN_ETF" | "DOMESTIC_FUND";
 
 export type DistributionType = "DIVIDEND" | "DISTRIBUTION" | "INTEREST";
 
+export type AccountType = "GENERAL" | "ISA" | "PENSION";
+
 // ── 테이블 Row 인터페이스 18개 ──
 
 export interface Portfolio {
@@ -40,6 +42,7 @@ export interface Portfolio {
   ticker: string;
   company_name: string;
   market: MarketType;
+  account_type: AccountType;
   sector: string | null;
   industry: string | null;
   memo: string | null;
@@ -498,6 +501,7 @@ export interface Database {
       notification_target_type: NotificationTargetType;
       asset_type: AssetType;
       distribution_type: DistributionType;
+      account_type: AccountType;
     };
     CompositeTypes: Record<string, never>;
   };

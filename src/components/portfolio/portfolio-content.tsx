@@ -1,7 +1,8 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PortfolioSummaryCards } from "@/components/portfolio/portfolio-summary-cards";
 import {
   HoldingsTable,
@@ -15,7 +16,14 @@ import {
   calculateUnrealizedPnL,
   getLatestBuyPrice,
 } from "@/lib/portfolio/calculations";
-import type { MarketType, Portfolio, Transaction } from "@/types";
+import type { AccountType, MarketType, Portfolio, Transaction } from "@/types";
+
+const ACCOUNT_TAB_OPTIONS: { value: AccountType | "ALL"; label: string }[] = [
+  { value: "ALL", label: "전체" },
+  { value: "GENERAL", label: "일반" },
+  { value: "ISA", label: "ISA" },
+  { value: "PENSION", label: "연금저축" },
+];
 
 interface PortfolioContentProps {
   portfolios: Portfolio[];
@@ -26,18 +34,37 @@ export function PortfolioContent({
   portfolios,
   transactions,
 }: PortfolioContentProps) {
+  const [selectedAccount, setSelectedAccount] = useState<AccountType | "ALL">(
+    "ALL",
+  );
+
+  // 계좌 유형 필터
+  const filteredPortfolios = useMemo(
+    () =>
+      selectedAccount === "ALL"
+        ? portfolios
+        : portfolios.filter((p) => p.account_type === selectedAccount),
+    [portfolios, selectedAccount],
+  );
+
+  const filteredTransactions = useMemo(() => {
+    if (selectedAccount === "ALL") return transactions;
+    const ids = new Set(filteredPortfolios.map((p) => p.id));
+    return transactions.filter((tx) => ids.has(tx.portfolio_id));
+  }, [transactions, filteredPortfolios, selectedAccount]);
+
   // 포트폴리오별 거래 그룹핑
   const txByPortfolio = useMemo(() => {
     const map = new Map<string, Transaction[]>();
-    for (const tx of transactions) {
+    for (const tx of filteredTransactions) {
       const list = map.get(tx.portfolio_id) ?? [];
       list.push(tx);
       map.set(tx.portfolio_id, list);
     }
     return map;
-  }, [transactions]);
+  }, [filteredTransactions]);
 
-  // 고유 티커 목록 추출
+  // 고유 티커 목록 추출 (시세 조회용으로 전체 포트폴리오에서 추출)
   const tickers = useMemo(() => portfolios.map((p) => p.ticker), [portfolios]);
 
   // 실시간 시세 조회
@@ -45,7 +72,7 @@ export function PortfolioContent({
 
   // 보유 종목 데이터 계산 (시세 도착 시 자동 갱신)
   const holdings: HoldingRow[] = useMemo(() => {
-    return portfolios
+    return filteredPortfolios
       .map((p) => {
         const txs = txByPortfolio.get(p.id) ?? [];
         const stats = calculateHoldingStats(txs);
@@ -58,13 +85,14 @@ export function PortfolioContent({
           ticker: p.ticker,
           companyName: p.company_name,
           market: p.market as MarketType,
+          accountType: p.account_type,
           sector: p.sector,
           stats,
           pnl,
         };
       })
       .filter((h) => h.stats.quantity > 0 || !txByPortfolio.has(h.id));
-  }, [portfolios, txByPortfolio, quotes]);
+  }, [filteredPortfolios, txByPortfolio, quotes]);
 
   // 요약 데이터 집계
   const totalInvested = holdings.reduce(
@@ -100,6 +128,20 @@ export function PortfolioContent({
         </div>
         <AddPortfolioDialog />
       </div>
+
+      <Tabs
+        value={selectedAccount}
+        onValueChange={(v) => setSelectedAccount(v as AccountType | "ALL")}
+        className="mb-6"
+      >
+        <TabsList>
+          {ACCOUNT_TAB_OPTIONS.map((opt) => (
+            <TabsTrigger key={opt.value} value={opt.value}>
+              {opt.label}
+            </TabsTrigger>
+          ))}
+        </TabsList>
+      </Tabs>
 
       <div className="mb-8">
         <PortfolioSummaryCards

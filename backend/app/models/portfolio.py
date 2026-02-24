@@ -21,6 +21,12 @@ class TransactionType(str, Enum):
     SELL = "SELL"
 
 
+class AccountType(str, Enum):
+    GENERAL = "GENERAL"     # 일반 위탁
+    ISA = "ISA"             # ISA
+    PENSION = "PENSION"     # 연금저축
+
+
 class DistributionType(str, Enum):
     DIVIDEND = "DIVIDEND"
     DISTRIBUTION = "DISTRIBUTION"
@@ -34,6 +40,7 @@ class PortfolioCreateRequest(BaseModel):
     ticker: str = Field(..., min_length=1, max_length=20)
     company_name: str = Field(..., min_length=1, max_length=100)
     market: MarketType
+    account_type: AccountType = AccountType.GENERAL
     sector: str | None = None
     industry: str | None = None
     memo: str | None = None
@@ -67,6 +74,7 @@ class PortfolioResponse(BaseModel):
     ticker: str
     company_name: str
     market: str
+    account_type: str = "GENERAL"
     sector: str | None = None
     industry: str | None = None
     memo: str | None = None
