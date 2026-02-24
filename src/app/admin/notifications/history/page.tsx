@@ -10,6 +10,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { serverApiFetch } from "@/lib/api/client";
 import { createClient } from "@/lib/supabase/server";
 import type { NotificationHistory } from "@/types";
 
@@ -26,17 +27,31 @@ const targetTypeBadge: Record<
   BROADCAST: { label: "전체", variant: "default" },
 };
 
+interface NotificationHistoryListResponse {
+  history: NotificationHistory[];
+  total: number;
+}
+
 export default async function NotificationHistoryPage() {
   const supabase = await createClient();
 
-  const { data: history } = await supabase
-    .from("notification_history")
-    .select("*")
-    .order("sent_at", { ascending: false })
-    .limit(50)
-    .returns<NotificationHistory[]>();
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
 
-  const allHistory = history ?? [];
+  let allHistory: NotificationHistory[] = [];
+
+  if (session?.access_token) {
+    try {
+      const result = await serverApiFetch<NotificationHistoryListResponse>(
+        "/admin/notifications/history?limit=50",
+        session.access_token,
+      );
+      allHistory = result.history;
+    } catch {
+      // API 에러 — 빈 상태 표시
+    }
+  }
 
   return (
     <div className="min-h-screen">

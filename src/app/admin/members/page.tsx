@@ -2,6 +2,7 @@ import { Users, UserCheck, UserX } from "lucide-react";
 
 import { Header } from "@/components/layout/header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { serverApiFetch } from "@/lib/api/client";
 import { createClient } from "@/lib/supabase/server";
 import { MembersTable } from "@/components/admin/members-table";
 import type { UserProfile } from "@/types";
@@ -10,16 +11,32 @@ export const metadata = {
   title: "회원 관리 | StockAnalysis AI",
 };
 
+interface MembersListResponse {
+  members: UserProfile[];
+  total: number;
+}
+
 export default async function AdminMembersPage() {
   const supabase = await createClient();
 
-  const { data: members } = await supabase
-    .from("user_profiles")
-    .select("*")
-    .order("created_at", { ascending: false })
-    .returns<UserProfile[]>();
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
 
-  const allMembers = members ?? [];
+  let allMembers: UserProfile[] = [];
+
+  if (session?.access_token) {
+    try {
+      const result = await serverApiFetch<MembersListResponse>(
+        "/admin/members",
+        session.access_token,
+      );
+      allMembers = result.members;
+    } catch {
+      // API 에러 — 빈 상태 표시
+    }
+  }
+
   const activeCount = allMembers.filter((m) => m.status === "ACTIVE").length;
   const suspendedCount = allMembers.filter(
     (m) => m.status === "SUSPENDED",

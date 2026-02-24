@@ -10,6 +10,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { serverApiFetch } from "@/lib/api/client";
 import { createClient } from "@/lib/supabase/server";
 import type { ModelConfig } from "@/types";
 
@@ -17,16 +18,31 @@ export const metadata = {
   title: "AI 모델 관리 | StockAnalysis AI",
 };
 
+interface ModelsListResponse {
+  models: ModelConfig[];
+  total: number;
+}
+
 export default async function AdminModelsPage() {
   const supabase = await createClient();
 
-  const { data: models } = await supabase
-    .from("model_configs")
-    .select("*")
-    .order("config_key", { ascending: true })
-    .returns<ModelConfig[]>();
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
 
-  const allModels = models ?? [];
+  let allModels: ModelConfig[] = [];
+
+  if (session?.access_token) {
+    try {
+      const result = await serverApiFetch<ModelsListResponse>(
+        "/admin/models",
+        session.access_token,
+      );
+      allModels = result.models;
+    } catch {
+      // API 에러 — 빈 상태 표시
+    }
+  }
 
   return (
     <div className="min-h-screen">

@@ -3,6 +3,7 @@ import { Users, Bell, ScrollText, Settings } from "lucide-react";
 
 import { Header } from "@/components/layout/header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { serverApiFetch } from "@/lib/api/client";
 import { createClient } from "@/lib/supabase/server";
 import { BackendStatus } from "@/components/admin/backend-status";
 
@@ -10,39 +11,42 @@ export const metadata = {
   title: "관리자 | StockAnalysis AI",
 };
 
+interface AdminStatsResponse {
+  user_count: number;
+  notification_count: number;
+  audit_count: number;
+  last_macro_at: string | null;
+  last_sentiment_at: string | null;
+}
+
 export default async function AdminPage() {
   const supabase = await createClient();
 
-  const [usersResult, alertsResult, auditResult, macroResult, sentimentResult] =
-    await Promise.all([
-      supabase
-        .from("user_profiles")
-        .select("id", { count: "exact", head: true }),
-      supabase
-        .from("notification_history")
-        .select("id", { count: "exact", head: true }),
-      supabase.from("audit_logs").select("id", { count: "exact", head: true }),
-      supabase
-        .from("macro_snapshots")
-        .select("created_at")
-        .order("created_at", { ascending: false })
-        .limit(1)
-        .maybeSingle(),
-      supabase
-        .from("sentiment_results")
-        .select("created_at")
-        .order("created_at", { ascending: false })
-        .limit(1)
-        .maybeSingle(),
-    ]);
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
 
-  const userCount = usersResult.count ?? 0;
-  const notificationCount = alertsResult.count ?? 0;
-  const auditCount = auditResult.count ?? 0;
-  const lastMacroAt =
-    (macroResult.data as { created_at: string } | null)?.created_at ?? null;
-  const lastSentimentAt =
-    (sentimentResult.data as { created_at: string } | null)?.created_at ?? null;
+  let userCount = 0;
+  let notificationCount = 0;
+  let auditCount = 0;
+  let lastMacroAt: string | null = null;
+  let lastSentimentAt: string | null = null;
+
+  if (session?.access_token) {
+    try {
+      const stats = await serverApiFetch<AdminStatsResponse>(
+        "/admin/stats",
+        session.access_token,
+      );
+      userCount = stats.user_count;
+      notificationCount = stats.notification_count;
+      auditCount = stats.audit_count;
+      lastMacroAt = stats.last_macro_at;
+      lastSentimentAt = stats.last_sentiment_at;
+    } catch {
+      // API 에러 — 빈 상태 표시
+    }
+  }
 
   const adminLinks = [
     {
