@@ -76,6 +76,7 @@ export async function signUp(
 ): Promise<AuthState> {
   const supabase = await createClient();
 
+  const displayName = (formData.get("displayName") as string)?.trim() || "";
   const email = formData.get("email") as string;
   const password = formData.get("password") as string;
   const confirmPassword = formData.get("confirmPassword") as string;
@@ -91,6 +92,9 @@ export async function signUp(
     password,
     options: {
       emailRedirectTo: `${appUrl}/auth/callback`,
+      data: {
+        display_name: displayName,
+      },
     },
   });
 

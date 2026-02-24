@@ -10,10 +10,9 @@ import { getCalendarEvents } from "@/lib/api/calendar";
 import type { EconomicCalendarEvent } from "@/types";
 
 const importanceBadge: Record<string, string> = {
-  HIGH: "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200",
-  MEDIUM:
-    "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200",
-  LOW: "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-300",
+  HIGH: "bg-red-500/15 text-red-700 dark:text-red-400",
+  MEDIUM: "bg-amber-500/15 text-amber-700 dark:text-amber-400",
+  LOW: "bg-muted text-muted-foreground",
 };
 
 const typeLabel: Record<string, string> = {

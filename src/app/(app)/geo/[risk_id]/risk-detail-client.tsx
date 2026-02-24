@@ -11,10 +11,10 @@ import type { GeopoliticalRisk, GeopoliticalEvent } from "@/types";
 import { AlertTriangle, ExternalLink, ArrowUp, ArrowDown, Minus } from "lucide-react";
 
 const levelColor: Record<string, string> = {
-  LOW: "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200",
-  MODERATE: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200",
-  HIGH: "bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200",
-  CRITICAL: "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200",
+  LOW: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400",
+  MODERATE: "bg-amber-500/15 text-amber-700 dark:text-amber-400",
+  HIGH: "bg-orange-500/15 text-orange-700 dark:text-orange-400",
+  CRITICAL: "bg-red-500/15 text-red-700 dark:text-red-400",
 };
 
 const severityIcon: Record<string, React.ReactNode> = {

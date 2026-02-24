@@ -12,7 +12,6 @@ import type { TodayGuideResponse } from "@/lib/api/guide";
 import {
   TrendingUp,
   TrendingDown,
-  Minus,
   Globe,
   BarChart3,
   AlertTriangle,
@@ -87,13 +86,18 @@ export function MarketOverview() {
   return (
     <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
       {items.map((item) => (
-        <Card key={item.name}>
-          <CardContent className="p-3">
-            <p className="text-muted-foreground text-xs">{item.name}</p>
+        <Card
+          key={item.name}
+          className="transition-shadow duration-200 hover:shadow-md"
+        >
+          <CardContent className="p-4">
+            <p className="text-muted-foreground text-xs font-medium">
+              {item.name}
+            </p>
             {loading ? (
-              <Skeleton className="my-1 h-6 w-20" />
+              <Skeleton className="my-1 h-7 w-24 animate-pulse" />
             ) : (
-              <p className="text-lg font-bold">
+              <p className="mt-1 text-2xl font-bold tracking-tight">
                 {item.value != null ? item.value.toLocaleString() : "—"}
               </p>
             )}
@@ -140,41 +144,65 @@ export function SignalSystem() {
     fetchSignals();
   }, []);
 
-  const vixColor =
-    vix == null
-      ? "bg-gray-400"
-      : vix < 20
-        ? "bg-green-500"
-        : vix < 30
-          ? "bg-yellow-400"
-          : "bg-red-500";
+  const vixLevel =
+    vix == null ? "none" : vix < 20 ? "safe" : vix < 30 ? "caution" : "danger";
 
-  const vixLabel =
-    vix == null
-      ? "데이터 없음"
-      : vix < 20
-        ? `안정 (VIX ${vix.toFixed(1)})`
-        : vix < 30
-          ? `주의 (VIX ${vix.toFixed(1)})`
-          : `위험 (VIX ${vix.toFixed(1)})`;
+  const vixConfig: Record<string, { bg: string; text: string; label: string }> =
+    {
+      none: {
+        bg: "bg-muted",
+        text: "text-muted-foreground",
+        label: "데이터 없음",
+      },
+      safe: {
+        bg: "bg-emerald-500/15",
+        text: "text-emerald-700 dark:text-emerald-400",
+        label: `안정 (VIX ${vix?.toFixed(1) ?? ""})`,
+      },
+      caution: {
+        bg: "bg-amber-500/15",
+        text: "text-amber-700 dark:text-amber-400",
+        label: `주의 (VIX ${vix?.toFixed(1) ?? ""})`,
+      },
+      danger: {
+        bg: "bg-red-500/15",
+        text: "text-red-700 dark:text-red-400",
+        label: `위험 (VIX ${vix?.toFixed(1) ?? ""})`,
+      },
+    };
 
-  const geoColorMap: Record<string, string> = {
-    CRITICAL: "bg-red-600",
-    HIGH: "bg-red-500",
-    MODERATE: "bg-yellow-400",
-    LOW: "bg-green-500",
+  const geoConfig: Record<
+    string,
+    { bg: string; text: string; label: string }
+  > = {
+    CRITICAL: {
+      bg: "bg-red-500/15",
+      text: "text-red-700 dark:text-red-400",
+      label: "위험",
+    },
+    HIGH: {
+      bg: "bg-red-500/15",
+      text: "text-red-700 dark:text-red-400",
+      label: "경계",
+    },
+    MODERATE: {
+      bg: "bg-amber-500/15",
+      text: "text-amber-700 dark:text-amber-400",
+      label: "주의",
+    },
+    LOW: {
+      bg: "bg-emerald-500/15",
+      text: "text-emerald-700 dark:text-emerald-400",
+      label: "안정",
+    },
   };
-  const geoColor = geoColorMap[maxGeoLevel] ?? "bg-gray-400";
-  const geoLabelMap: Record<string, string> = {
-    CRITICAL: "위험",
-    HIGH: "경계",
-    MODERATE: "주의",
-    LOW: "안정",
-  };
+
+  const vc = vixConfig[vixLevel];
+  const gc = geoConfig[maxGeoLevel];
 
   return (
     <div className="grid gap-4 md:grid-cols-2">
-      <Card>
+      <Card className="transition-shadow duration-200 hover:shadow-md">
         <CardHeader className="pb-2">
           <CardTitle className="flex items-center gap-2 text-base">
             <BarChart3 className="size-4" />
@@ -183,16 +211,19 @@ export function SignalSystem() {
         </CardHeader>
         <CardContent>
           {loading ? (
-            <Skeleton className="h-5 w-40" />
+            <Skeleton className="h-8 w-48 animate-pulse" />
           ) : (
             <div className="flex items-center gap-3">
-              <span className={`inline-block size-4 rounded-full ${vixColor}`} />
-              <span className="text-sm">{vixLabel}</span>
+              <span
+                className={`inline-flex items-center rounded-full px-3 py-1 text-sm font-medium ${vc.bg} ${vc.text}`}
+              >
+                {vc.label}
+              </span>
             </div>
           )}
         </CardContent>
       </Card>
-      <Card>
+      <Card className="transition-shadow duration-200 hover:shadow-md">
         <CardHeader className="pb-2">
           <CardTitle className="flex items-center gap-2 text-base">
             <Globe className="size-4" />
@@ -201,12 +232,13 @@ export function SignalSystem() {
         </CardHeader>
         <CardContent>
           {loading ? (
-            <Skeleton className="h-5 w-40" />
+            <Skeleton className="h-8 w-48 animate-pulse" />
           ) : (
             <div className="flex items-center gap-3">
-              <span className={`inline-block size-4 rounded-full ${geoColor}`} />
-              <span className="text-sm">
-                {geoLabelMap[maxGeoLevel] ?? "데이터 없음"} ({maxGeoLevel})
+              <span
+                className={`inline-flex items-center rounded-full px-3 py-1 text-sm font-medium ${gc?.bg ?? "bg-muted"} ${gc?.text ?? "text-muted-foreground"}`}
+              >
+                {gc?.label ?? "데이터 없음"} ({maxGeoLevel})
               </span>
             </div>
           )}
@@ -219,11 +251,11 @@ export function SignalSystem() {
 // ─── 오늘의 가이드 ───
 
 const actionColorMap: Record<string, string> = {
-  BUY: "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200",
-  SELL: "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200",
-  HOLD: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200",
-  WATCH: "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200",
-  AVOID: "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200",
+  BUY: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400",
+  SELL: "bg-red-500/15 text-red-700 dark:text-red-400",
+  HOLD: "bg-amber-500/15 text-amber-700 dark:text-amber-400",
+  WATCH: "bg-blue-500/15 text-blue-700 dark:text-blue-400",
+  AVOID: "bg-muted text-muted-foreground",
 };
 
 const actionLabelMap: Record<string, string> = {
@@ -232,6 +264,11 @@ const actionLabelMap: Record<string, string> = {
   HOLD: "홀딩",
   WATCH: "관망",
   AVOID: "회피",
+};
+
+const actionIconMap: Record<string, React.ElementType> = {
+  BUY: TrendingUp,
+  SELL: TrendingDown,
 };
 
 export function TodayGuideSection() {
@@ -248,8 +285,8 @@ export function TodayGuideSection() {
   if (loading) {
     return (
       <div className="space-y-3">
-        <Skeleton className="h-20 w-full" />
-        <Skeleton className="h-20 w-full" />
+        <Skeleton className="h-20 w-full animate-pulse" />
+        <Skeleton className="h-20 w-full animate-pulse" />
       </div>
     );
   }
@@ -270,7 +307,7 @@ export function TodayGuideSection() {
   return (
     <div className="space-y-3">
       {guide.market_summary && (
-        <Card>
+        <Card className="transition-shadow duration-200 hover:shadow-md">
           <CardContent className="p-4">
             <p className="text-sm leading-relaxed">{guide.market_summary}</p>
             {guide.geo_summary && (
@@ -283,27 +320,35 @@ export function TodayGuideSection() {
       )}
 
       {guide.action_cards.length > 0 && (
-        <div className="grid gap-2 md:grid-cols-2 lg:grid-cols-3">
-          {guide.action_cards.map((card) => (
-            <Link key={card.ticker} href={`/guide/${card.ticker}`}>
-              <Card className="transition-colors hover:bg-accent/50">
-                <CardContent className="p-3">
-                  <div className="mb-1 flex items-center justify-between">
-                    <span className="font-medium">{card.company_name}</span>
-                    <Badge
-                      className={
-                        actionColorMap[card.action] ?? "bg-gray-100 text-gray-800"
-                      }
-                    >
-                      {actionLabelMap[card.action] ?? card.action}
-                    </Badge>
-                  </div>
-                  <p className="text-muted-foreground text-xs">{card.ticker}</p>
-                  <p className="mt-1 text-xs leading-relaxed">{card.reason}</p>
-                </CardContent>
-              </Card>
-            </Link>
-          ))}
+        <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
+          {guide.action_cards.map((card) => {
+            const ActionIcon = actionIconMap[card.action];
+            return (
+              <Link key={card.ticker} href={`/guide/${card.ticker}`}>
+                <Card className="group transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md">
+                  <CardContent className="p-4">
+                    <div className="mb-2 flex items-center justify-between">
+                      <span className="font-semibold">{card.company_name}</span>
+                      <Badge
+                        className={
+                          actionColorMap[card.action] ?? "bg-muted text-muted-foreground"
+                        }
+                      >
+                        {ActionIcon && <ActionIcon className="mr-1 size-3" />}
+                        {actionLabelMap[card.action] ?? card.action}
+                      </Badge>
+                    </div>
+                    <p className="text-muted-foreground text-xs">
+                      {card.ticker}
+                    </p>
+                    <p className="mt-2 text-xs leading-relaxed">
+                      {card.reason}
+                    </p>
+                  </CardContent>
+                </Card>
+              </Link>
+            );
+          })}
         </div>
       )}
 
@@ -320,6 +365,12 @@ export function TodayGuideSection() {
 }
 
 // ─── 주요 이벤트 ───
+
+const importanceBorderColor: Record<string, string> = {
+  HIGH: "border-l-red-500",
+  MEDIUM: "border-l-amber-500",
+  LOW: "border-l-slate-400",
+};
 
 export function KeyEventsSection() {
   const [events, setEvents] = useState<
@@ -345,7 +396,7 @@ export function KeyEventsSection() {
       .finally(() => setLoading(false));
   }, []);
 
-  if (loading) return <Skeleton className="h-16 w-full" />;
+  if (loading) return <Skeleton className="h-16 w-full animate-pulse" />;
 
   if (events.length === 0) {
     return (
@@ -359,20 +410,20 @@ export function KeyEventsSection() {
     );
   }
 
-  const importanceBadge: Record<string, string> = {
-    HIGH: "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200",
-    MEDIUM: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200",
-    LOW: "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-300",
-  };
-
   return (
-    <Card>
+    <Card className="transition-shadow duration-200 hover:shadow-md">
       <CardContent className="divide-y p-0">
         {events.map((ev, i) => (
-          <div key={i} className="flex items-center gap-3 px-4 py-3">
+          <div
+            key={i}
+            className={`flex items-center gap-3 border-l-4 px-4 py-3 ${importanceBorderColor[ev.importance] ?? importanceBorderColor.LOW}`}
+          >
             <Calendar className="text-muted-foreground size-4 shrink-0" />
             <span className="flex-1 text-sm">{ev.title}</span>
-            <Badge className={importanceBadge[ev.importance] ?? importanceBadge.LOW}>
+            <Badge
+              variant="outline"
+              className="text-xs"
+            >
               {ev.importance}
             </Badge>
           </div>

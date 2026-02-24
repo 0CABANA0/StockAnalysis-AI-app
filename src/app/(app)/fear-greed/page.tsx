@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 
 import { Gauge } from "lucide-react";
+import { PageHeader } from "@/components/layout/page-header";
 import { FearGreedContent } from "./fear-greed-client";
 
 export const metadata: Metadata = {
@@ -11,16 +12,11 @@ export const metadata: Metadata = {
 export default function FearGreedPage() {
   return (
     <div className="space-y-6 p-4 md:p-6">
-      <div>
-        <h1 className="flex items-center gap-2 text-2xl font-bold">
-          <Gauge className="size-6" />
-          공포 / 탐욕 지수
-        </h1>
-        <p className="text-muted-foreground mt-1 text-sm">
-          시장 심리 지수 + 지정학 리스크 병행 분석
-        </p>
-      </div>
-
+      <PageHeader
+        icon={<Gauge className="size-5" />}
+        title="공포/탐욕 지수"
+        description="시장 심리 지표"
+      />
       <FearGreedContent />
     </div>
   );

@@ -11,8 +11,8 @@ import { getGeoRisks } from "@/lib/api/geo";
 import type { GeopoliticalRisk } from "@/types";
 
 const levelColor: Record<string, string> = {
-  LOW: "bg-green-500",
-  MODERATE: "bg-yellow-400",
+  LOW: "bg-emerald-500",
+  MODERATE: "bg-amber-400",
   HIGH: "bg-orange-500",
   CRITICAL: "bg-red-500",
 };

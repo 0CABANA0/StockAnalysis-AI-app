@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 
-import { Camera } from "lucide-react";
+import { ImageIcon } from "lucide-react";
+import { PageHeader } from "@/components/layout/page-header";
 import { AnalyzeContent } from "./analyze-client";
 
 export const metadata: Metadata = {
@@ -11,16 +12,11 @@ export const metadata: Metadata = {
 export default function AnalyzePage() {
   return (
     <div className="space-y-6 p-4 md:p-6">
-      <div>
-        <h1 className="flex items-center gap-2 text-2xl font-bold">
-          <Camera className="size-6" />
-          보유 종목 이미지 분석
-        </h1>
-        <p className="text-muted-foreground mt-1 text-sm">
-          증권사 캡처 이미지를 업로드하면 AI가 보유 종목을 분석하고
-          매수/매도/홀딩 가이드를 제공합니다
-        </p>
-      </div>
+      <PageHeader
+        icon={<ImageIcon className="size-5" />}
+        title="이미지 분석"
+        description="보유 자산 스크린샷으로 AI 진단"
+      />
       <AnalyzeContent />
     </div>
   );

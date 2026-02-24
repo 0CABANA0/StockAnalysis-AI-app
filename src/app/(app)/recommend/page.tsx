@@ -2,7 +2,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 import { Card, CardContent } from "@/components/ui/card";
-import { Target } from "lucide-react";
+import { TrendingUp } from "lucide-react";
+import { PageHeader } from "@/components/layout/page-header";
 import { RecommendContent } from "./recommend-client";
 
 export const metadata: Metadata = {
@@ -21,20 +22,16 @@ export default function RecommendPage() {
 
   return (
     <div className="space-y-6 p-4 md:p-6">
-      <div>
-        <h1 className="flex items-center gap-2 text-2xl font-bold">
-          <Target className="size-6" />
-          종목 추천
-        </h1>
-        <p className="text-muted-foreground mt-1 text-sm">
-          거시경제 + 지정학 근거 기반 종목/ETF 추천
-        </p>
-      </div>
+      <PageHeader
+        icon={<TrendingUp className="size-5" />}
+        title="종목 추천"
+        description="거시경제 근거 기반 추천"
+      />
 
       <div className="grid gap-4 md:grid-cols-3 lg:grid-cols-5">
         {categories.map((cat) => (
           <Link key={cat.key} href={`/recommend/${cat.key}`}>
-            <Card className="hover:border-primary/50 cursor-pointer transition-colors">
+            <Card className="cursor-pointer transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md">
               <CardContent className="p-4 text-center">
                 <p className="text-2xl font-bold">{cat.flag}</p>
                 <p className="mt-1 font-semibold">{cat.label}</p>

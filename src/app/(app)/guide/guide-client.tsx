@@ -12,11 +12,11 @@ import type { TodayGuideResponse } from "@/lib/api/guide";
 import { TrendingUp } from "lucide-react";
 
 const actionColorMap: Record<string, string> = {
-  BUY: "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200",
-  SELL: "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200",
-  HOLD: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200",
-  WATCH: "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200",
-  AVOID: "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200",
+  BUY: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400",
+  SELL: "bg-red-500/15 text-red-700 dark:text-red-400",
+  HOLD: "bg-amber-500/15 text-amber-700 dark:text-amber-400",
+  WATCH: "bg-blue-500/15 text-blue-700 dark:text-blue-400",
+  AVOID: "bg-muted text-muted-foreground",
 };
 
 const actionLabelMap: Record<string, string> = {
@@ -110,7 +110,7 @@ export function GuideContent() {
           <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
             {guide.action_cards.map((card) => (
               <Link key={card.ticker} href={`/guide/${card.ticker}`}>
-                <Card className="hover:bg-accent/50 h-full transition-colors">
+                <Card className="h-full transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md">
                   <CardContent className="p-4">
                     <div className="mb-2 flex items-center justify-between">
                       <div>

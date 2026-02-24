@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 
-import { BarChart3 } from "lucide-react";
+import { Globe } from "lucide-react";
+import { PageHeader } from "@/components/layout/page-header";
 import { MacroContent } from "./macro-client";
 
 export const metadata: Metadata = {
@@ -11,16 +12,11 @@ export const metadata: Metadata = {
 export default function MacroPage() {
   return (
     <div className="space-y-6 p-4 md:p-6">
-      <div>
-        <h1 className="flex items-center gap-2 text-2xl font-bold">
-          <BarChart3 className="size-6" />
-          거시경제 지표 모니터링
-        </h1>
-        <p className="text-muted-foreground mt-1 text-sm">
-          글로벌 지수, 환율, 원자재, 금리 실시간 추적
-        </p>
-      </div>
-
+      <PageHeader
+        icon={<Globe className="size-5" />}
+        title="거시경제"
+        description="글로벌 경제 지표 대시보드"
+      />
       <MacroContent />
     </div>
   );

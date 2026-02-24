@@ -68,6 +68,16 @@ export default function SignupPage() {
           )}
           <form action={formAction} className="space-y-4">
             <div className="space-y-2">
+              <Label htmlFor="displayName">이름</Label>
+              <Input
+                id="displayName"
+                name="displayName"
+                placeholder="홍길동"
+                required
+                autoComplete="name"
+              />
+            </div>
+            <div className="space-y-2">
               <Label htmlFor="email">이메일</Label>
               <Input
                 id="email"
