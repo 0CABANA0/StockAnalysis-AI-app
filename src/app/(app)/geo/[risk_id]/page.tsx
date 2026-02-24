@@ -1,11 +1,19 @@
 import type { Metadata } from "next";
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { Shield } from "lucide-react";
+import { RiskDetailContent } from "./risk-detail-client";
 
-export const metadata: Metadata = {
-  title: "리스크 상세 | Stock Intelligence",
-};
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ risk_id: string }>;
+}): Promise<Metadata> {
+  const { risk_id } = await params;
+  return {
+    title: `${risk_id} 리스크 상세`,
+    description: `지정학 리스크 "${risk_id}" 상세 분석 및 투자 영향`,
+  };
+}
 
 export default async function GeoRiskDetailPage({
   params,
@@ -17,16 +25,12 @@ export default async function GeoRiskDetailPage({
   return (
     <div className="space-y-6 p-4 md:p-6">
       <div>
-        <Badge variant="outline" className="mb-2">{risk_id}</Badge>
-        <h1 className="text-2xl font-bold">지정학 리스크 상세</h1>
+        <h1 className="flex items-center gap-2 text-2xl font-bold">
+          <Shield className="size-6" />
+          지정학 리스크 상세
+        </h1>
       </div>
-      <Card>
-        <CardContent className="p-6">
-          <p className="text-muted-foreground text-sm">
-            백엔드 연동 후 상세 분석 데이터가 표시됩니다.
-          </p>
-        </CardContent>
-      </Card>
+      <RiskDetailContent riskId={risk_id} />
     </div>
   );
 }

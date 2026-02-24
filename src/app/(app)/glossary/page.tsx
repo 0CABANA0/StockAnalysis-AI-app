@@ -1,25 +1,18 @@
 import type { Metadata } from "next";
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { BookOpen } from "lucide-react";
+import { GlossaryContent } from "./glossary-client";
 
 export const metadata: Metadata = {
-  title: "용어사전 | Stock Intelligence",
+  title: "용어사전",
+  description: "투자 초보자를 위한 거시경제·기술분석·지정학 용어 해설",
 };
 
 export default function GlossaryPage() {
-  const categories = [
-    "거시경제",
-    "기술적 분석",
-    "지정학",
-    "ETF/펀드",
-    "투자 전략",
-  ];
-
   return (
     <div className="space-y-6 p-4 md:p-6">
       <div>
-        <h1 className="text-2xl font-bold flex items-center gap-2">
+        <h1 className="flex items-center gap-2 text-2xl font-bold">
           <BookOpen className="size-6" />
           초보자 용어사전
         </h1>
@@ -28,23 +21,7 @@ export default function GlossaryPage() {
         </p>
       </div>
 
-      <div className="grid gap-3 md:grid-cols-3 lg:grid-cols-5">
-        {categories.map((cat) => (
-          <Card key={cat}>
-            <CardContent className="p-4 text-center">
-              <p className="font-semibold">{cat}</p>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-
-      <Card>
-        <CardContent className="p-6">
-          <p className="text-muted-foreground text-sm text-center">
-            백엔드 연동 후 용어 목록이 표시됩니다.
-          </p>
-        </CardContent>
-      </Card>
+      <GlossaryContent />
     </div>
   );
 }

@@ -30,6 +30,7 @@ import { useState } from "react";
 
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 interface NavItem {
   href: string;
@@ -198,10 +199,11 @@ export function Sidebar({ displayName, role, signOutAction }: SidebarProps) {
         </Link>
       </div>
 
-      {/* User info & logout */}
-      <div className="border-t p-3">
+      {/* Theme toggle & User info & logout */}
+      <div className="space-y-1 border-t p-3">
+        <ThemeToggle collapsed={collapsed} />
         {!collapsed && (
-          <p className="text-muted-foreground mb-2 truncate text-xs">
+          <p className="text-muted-foreground mt-2 truncate text-xs">
             {displayName}
           </p>
         )}

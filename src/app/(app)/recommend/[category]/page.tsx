@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 
-import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { Target } from "lucide-react";
+import { CategoryRecommendContent } from "./category-recommend-client";
 
 const categoryNames: Record<string, string> = {
   domestic: "국내",
@@ -11,9 +11,18 @@ const categoryNames: Record<string, string> = {
   etf: "ETF",
 };
 
-export const metadata: Metadata = {
-  title: "카테고리 추천 | Stock Intelligence",
-};
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ category: string }>;
+}): Promise<Metadata> {
+  const { category } = await params;
+  const name = categoryNames[category] || category;
+  return {
+    title: `${name} 종목 추천`,
+    description: `거시경제+지정학 근거 기반 ${name} 시장 추천`,
+  };
+}
 
 export default async function RecommendCategoryPage({
   params,
@@ -26,19 +35,15 @@ export default async function RecommendCategoryPage({
   return (
     <div className="space-y-6 p-4 md:p-6">
       <div>
-        <Badge variant="outline" className="mb-2">{name}</Badge>
-        <h1 className="text-2xl font-bold">{name} 종목 추천</h1>
+        <h1 className="flex items-center gap-2 text-2xl font-bold">
+          <Target className="size-6" />
+          {name} 종목 추천
+        </h1>
         <p className="text-muted-foreground mt-1 text-sm">
           거시+지정학 근거 기반 {name} 시장 추천
         </p>
       </div>
-      <Card>
-        <CardContent className="p-6">
-          <p className="text-muted-foreground text-sm text-center">
-            백엔드 연동 후 추천 종목이 표시됩니다.
-          </p>
-        </CardContent>
-      </Card>
+      <CategoryRecommendContent category={category} />
     </div>
   );
 }

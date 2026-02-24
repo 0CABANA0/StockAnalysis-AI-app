@@ -18,6 +18,17 @@ export type EventType =
   | "REGULATORY"
   | "NATURAL";
 
+export type NewsCategory =
+  | "MACRO_FINANCE"
+  | "GEOPOLITICS"
+  | "TECH_INDUSTRY"
+  | "ENERGY"
+  | "DOMESTIC_POLITICS"
+  | "INTL_POLITICS"
+  | "BREAKING_DISASTER"
+  | "ECONOMIC_POLICY"
+  | "LIFESTYLE_ASSET";
+
 export type SentimentDirection = "BULLISH" | "BEARISH" | "NEUTRAL";
 
 export type RiskLevel = "LOW" | "MEDIUM" | "HIGH";
@@ -59,15 +70,6 @@ export type CalendarEventType = "ECONOMIC" | "GEOPOLITICAL" | "EARNINGS";
 
 export type EventImportance = "HIGH" | "MEDIUM" | "LOW";
 
-// ── v1 레거시 ENUM (하위 호환) ──
-
-/** @deprecated v2.0 — transactions 제거 */
-export type TransactionType = "BUY" | "SELL";
-/** @deprecated v2.0 — price_alerts 제거 */
-export type AlertType = "TARGET_PRICE" | "STOP_LOSS" | "DAILY_CHANGE";
-/** @deprecated v2.0 — distributions 제거 */
-export type DistributionType = "DIVIDEND" | "DISTRIBUTION" | "INTEREST";
-
 // ── 유지 테이블 Row 인터페이스 (13개) ──
 
 export interface Recommendation {
@@ -106,6 +108,7 @@ export interface SentimentResult {
   confidence: number | null;
   event_type: EventType | null;
   urgency: RiskLevel;
+  news_category: NewsCategory | null;
   reasoning: string | null;
   affected_sectors: string[] | null;
   affected_countries: string[] | null;
@@ -113,6 +116,25 @@ export interface SentimentResult {
   medium_term_impact: string | null;
   analyzed_at: string;
   created_at: string;
+}
+
+export interface NewsCategoryConfig {
+  category_key: NewsCategory;
+  display_name: string;
+  description: string | null;
+  keywords: string[];
+  is_active: boolean;
+  sort_order: number;
+}
+
+export interface NewsCategorySummary {
+  category_key: NewsCategory;
+  display_name: string;
+  total: number;
+  bullish: number;
+  bearish: number;
+  neutral: number;
+  avg_score: number;
 }
 
 export interface EtfFundMaster {
@@ -486,6 +508,11 @@ export type FearGreedSnapshotInsert = Omit<
   FearGreedSnapshot,
   "id" | "created_at"
 >;
+
+export type NewsCategoryConfigInsert = Omit<
+  NewsCategoryConfig,
+  "is_active" | "sort_order"
+> & { sort_order?: number };
 
 // ── Supabase Database 제네릭 인터페이스 ──
 

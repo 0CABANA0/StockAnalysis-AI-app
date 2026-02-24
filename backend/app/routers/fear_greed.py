@@ -2,8 +2,9 @@ from fastapi import APIRouter, Depends, Query
 from supabase import Client
 
 from app.dependencies import get_supabase
-from app.middleware.auth import CurrentUser, get_current_user
+from app.middleware.auth import CurrentUser, get_current_user, require_admin
 from app.models.fear_greed import FearGreedResponse, FearGreedSnapshot
+from app.services import fear_greed_service
 from app.utils.logger import get_logger
 
 logger = get_logger(__name__)
@@ -27,3 +28,13 @@ def get_fear_greed(
     history = [FearGreedSnapshot(**s) for s in (history_result.data or [])]
 
     return FearGreedResponse(current=current, history=history)
+
+
+@router.post("/collect")
+def collect_fear_greed(
+    _admin: CurrentUser = Depends(require_admin),
+    client: Client = Depends(get_supabase),
+):
+    """공포/탐욕 지수 수집/계산. (ADMIN 전용)"""
+    result = fear_greed_service.collect_fear_greed(client)
+    return result

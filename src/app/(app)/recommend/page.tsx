@@ -1,12 +1,13 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { Card, CardContent } from "@/components/ui/card";
 import { Target } from "lucide-react";
+import { RecommendContent } from "./recommend-client";
 
 export const metadata: Metadata = {
-  title: "종목 추천 | Stock Intelligence",
+  title: "종목 추천",
+  description: "거시경제+지정학 근거 기반 국내·미국·일본·유럽·ETF 종목 추천",
 };
 
 export default function RecommendPage() {
@@ -21,7 +22,7 @@ export default function RecommendPage() {
   return (
     <div className="space-y-6 p-4 md:p-6">
       <div>
-        <h1 className="text-2xl font-bold flex items-center gap-2">
+        <h1 className="flex items-center gap-2 text-2xl font-bold">
           <Target className="size-6" />
           종목 추천
         </h1>
@@ -33,24 +34,20 @@ export default function RecommendPage() {
       <div className="grid gap-4 md:grid-cols-3 lg:grid-cols-5">
         {categories.map((cat) => (
           <Link key={cat.key} href={`/recommend/${cat.key}`}>
-            <Card className="hover:border-primary/50 transition-colors cursor-pointer">
+            <Card className="hover:border-primary/50 cursor-pointer transition-colors">
               <CardContent className="p-4 text-center">
                 <p className="text-2xl font-bold">{cat.flag}</p>
-                <p className="font-semibold mt-1">{cat.label}</p>
-                <p className="text-muted-foreground text-xs mt-1">{cat.desc}</p>
+                <p className="mt-1 font-semibold">{cat.label}</p>
+                <p className="text-muted-foreground mt-1 text-xs">
+                  {cat.desc}
+                </p>
               </CardContent>
             </Card>
           </Link>
         ))}
       </div>
 
-      <Card>
-        <CardContent className="p-6">
-          <p className="text-muted-foreground text-sm text-center">
-            백엔드 연동 후 거시+지정학 근거 기반 추천 종목이 표시됩니다.
-          </p>
-        </CardContent>
-      </Card>
+      <RecommendContent />
     </div>
   );
 }

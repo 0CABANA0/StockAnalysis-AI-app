@@ -5,6 +5,7 @@ from datetime import date
 from app.dependencies import get_supabase
 from app.middleware.auth import CurrentUser, get_current_user, require_admin
 from app.models.guide import InvestmentGuide, TickerGuideResponse, TodayGuideResponse, ActionCard, KeyEvent
+from app.services import guide_service
 from app.utils.logger import get_logger
 
 logger = get_logger(__name__)
@@ -15,10 +16,22 @@ router = APIRouter(prefix="/api/guide", tags=["guide"])
 @router.post("/generate")
 def generate_guides(
     _admin: CurrentUser = Depends(require_admin),
+    client: Client = Depends(get_supabase),
 ):
     """투자 가이드 생성 (스케줄러/ADMIN)."""
-    # TODO: guide_service.generate()
-    return {"success": True, "message": "Guide generation not yet implemented"}
+    result = guide_service.generate_daily_guide(client)
+    return result
+
+
+@router.post("/generate/{ticker}")
+def generate_ticker_guide(
+    ticker: str,
+    _admin: CurrentUser = Depends(require_admin),
+    client: Client = Depends(get_supabase),
+):
+    """종목별 투자 가이드 생성 (ADMIN 전용)."""
+    result = guide_service.generate_ticker_guide(client, ticker.upper())
+    return result
 
 
 @router.get("/today", response_model=TodayGuideResponse)

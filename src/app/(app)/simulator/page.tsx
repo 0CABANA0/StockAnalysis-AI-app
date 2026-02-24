@@ -1,24 +1,18 @@
 import type { Metadata } from "next";
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { FlaskConical } from "lucide-react";
+import { SimulatorContent } from "./simulator-client";
 
 export const metadata: Metadata = {
-  title: "시나리오 시뮬레이션 | Stock Intelligence",
+  title: "시나리오 시뮬레이션",
+  description: "금리·환율·지정학 시나리오별 What-if AI 분석",
 };
 
 export default function SimulatorPage() {
-  const scenarios = [
-    { title: "금리 인상 시나리오", desc: "금리 0.25% 인상하면?" },
-    { title: "환율 급등 시나리오", desc: "환율 1,500원이면?" },
-    { title: "대만 군사 충돌", desc: "대만해협 군사 충돌 시?" },
-    { title: "미중 관세 확대", desc: "미중 관세 50% 시?" },
-  ];
-
   return (
     <div className="space-y-6 p-4 md:p-6">
       <div>
-        <h1 className="text-2xl font-bold flex items-center gap-2">
+        <h1 className="flex items-center gap-2 text-2xl font-bold">
           <FlaskConical className="size-6" />
           시나리오 시뮬레이션
         </h1>
@@ -27,16 +21,7 @@ export default function SimulatorPage() {
         </p>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2">
-        {scenarios.map((s) => (
-          <Card key={s.title} className="cursor-pointer hover:border-primary/50 transition-colors">
-            <CardContent className="p-4">
-              <p className="font-semibold">{s.title}</p>
-              <p className="text-muted-foreground text-sm mt-1">{s.desc}</p>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+      <SimulatorContent />
     </div>
   );
 }

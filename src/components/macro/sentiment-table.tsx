@@ -28,6 +28,18 @@ const urgencyStyles: Record<string, { label: string; className: string }> = {
   HIGH: { label: "높음", className: "text-red-600" },
 };
 
+const categoryLabels: Record<string, string> = {
+  MACRO_FINANCE: "거시경제",
+  GEOPOLITICS: "지정학",
+  TECH_INDUSTRY: "기술산업",
+  ENERGY: "에너지",
+  DOMESTIC_POLITICS: "국내정치",
+  INTL_POLITICS: "국제정치",
+  BREAKING_DISASTER: "속보재난",
+  ECONOMIC_POLICY: "경제정책",
+  LIFESTYLE_ASSET: "생활자산",
+};
+
 function formatDate(dateStr: string): string {
   return new Date(dateStr).toLocaleDateString("ko-KR", {
     month: "2-digit",
@@ -61,10 +73,10 @@ export function SentimentTable({ sentiments }: SentimentTableProps) {
       <TableHeader>
         <TableRow>
           <TableHead>제목</TableHead>
+          <TableHead>카테고리</TableHead>
           <TableHead>방향</TableHead>
           <TableHead className="text-right">점수</TableHead>
           <TableHead>긴급도</TableHead>
-          <TableHead>이벤트</TableHead>
           <TableHead>영향 섹터</TableHead>
           <TableHead>분석일</TableHead>
         </TableRow>
@@ -91,6 +103,15 @@ export function SentimentTable({ sentiments }: SentimentTableProps) {
                 )}
               </TableCell>
               <TableCell>
+                {s.news_category ? (
+                  <Badge variant="outline" className="text-xs">
+                    {categoryLabels[s.news_category] ?? s.news_category}
+                  </Badge>
+                ) : (
+                  "-"
+                )}
+              </TableCell>
+              <TableCell>
                 <Badge variant={dir.variant}>{dir.label}</Badge>
               </TableCell>
               <TableCell className="text-right font-mono">
@@ -100,13 +121,6 @@ export function SentimentTable({ sentiments }: SentimentTableProps) {
                 <span className={`text-sm font-medium ${urg.className}`}>
                   {urg.label}
                 </span>
-              </TableCell>
-              <TableCell>
-                {s.event_type ? (
-                  <Badge variant="outline">{s.event_type}</Badge>
-                ) : (
-                  "-"
-                )}
               </TableCell>
               <TableCell className="text-muted-foreground text-sm">
                 {s.affected_sectors?.join(", ") ?? "-"}

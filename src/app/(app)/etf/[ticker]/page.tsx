@@ -1,11 +1,19 @@
 import type { Metadata } from "next";
 
-import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { LineChart } from "lucide-react";
+import { EtfDetailContent } from "./etf-detail-client";
 
-export const metadata: Metadata = {
-  title: "ETF 상세 | Stock Intelligence",
-};
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ ticker: string }>;
+}): Promise<Metadata> {
+  const { ticker } = await params;
+  return {
+    title: `${ticker} ETF 상세`,
+    description: `${ticker} ETF 상세 정보 및 비교 분석`,
+  };
+}
 
 export default async function EtfDetailPage({
   params,
@@ -17,16 +25,12 @@ export default async function EtfDetailPage({
   return (
     <div className="space-y-6 p-4 md:p-6">
       <div>
-        <Badge variant="outline" className="mb-2">{ticker}</Badge>
-        <h1 className="text-2xl font-bold">{ticker} ETF 상세</h1>
+        <h1 className="flex items-center gap-2 text-2xl font-bold">
+          <LineChart className="size-6" />
+          {ticker} ETF 상세
+        </h1>
       </div>
-      <Card>
-        <CardContent className="p-6">
-          <p className="text-muted-foreground text-sm">
-            백엔드 연동 후 ETF 상세 정보가 표시됩니다.
-          </p>
-        </CardContent>
-      </Card>
+      <EtfDetailContent ticker={ticker} />
     </div>
   );
 }

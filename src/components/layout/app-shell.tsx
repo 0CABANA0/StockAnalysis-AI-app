@@ -40,9 +40,11 @@ export async function AppShell({ children }: { children: React.ReactNode }) {
       {/* 메인 컨텐츠 */}
       <div className="flex flex-1 flex-col overflow-hidden">
         <MobileHeader />
-        <main className="flex-1 overflow-y-auto pb-16 md:pb-0">
+        <main className="flex-1 overflow-y-auto pb-20 md:pb-0">
           {children}
-          <DisclaimerBanner />
+          <div className="px-4 pb-4 md:px-6">
+            <DisclaimerBanner />
+          </div>
         </main>
         <MobileTabBar />
       </div>

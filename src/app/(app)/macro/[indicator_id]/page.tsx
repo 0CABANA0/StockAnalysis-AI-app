@@ -1,11 +1,19 @@
 import type { Metadata } from "next";
 
-import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { BarChart3 } from "lucide-react";
+import { IndicatorContent } from "./indicator-client";
 
-export const metadata: Metadata = {
-  title: "지표 상세 | Stock Intelligence",
-};
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ indicator_id: string }>;
+}): Promise<Metadata> {
+  const { indicator_id } = await params;
+  return {
+    title: `${indicator_id} 지표 상세`,
+    description: `거시경제 지표 "${indicator_id}" 상세 데이터 및 추세 분석`,
+  };
+}
 
 export default async function MacroIndicatorPage({
   params,
@@ -17,16 +25,12 @@ export default async function MacroIndicatorPage({
   return (
     <div className="space-y-6 p-4 md:p-6">
       <div>
-        <Badge variant="outline" className="mb-2">{indicator_id}</Badge>
-        <h1 className="text-2xl font-bold">거시경제 지표 상세</h1>
+        <h1 className="flex items-center gap-2 text-2xl font-bold">
+          <BarChart3 className="size-6" />
+          거시경제 지표 상세
+        </h1>
       </div>
-      <Card>
-        <CardContent className="p-6">
-          <p className="text-muted-foreground text-sm">
-            백엔드 연동 후 지표 데이터 및 차트가 표시됩니다.
-          </p>
-        </CardContent>
-      </Card>
+      <IndicatorContent indicatorId={indicator_id} />
     </div>
   );
 }

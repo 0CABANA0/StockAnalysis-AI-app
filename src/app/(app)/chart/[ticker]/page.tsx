@@ -1,11 +1,19 @@
 import type { Metadata } from "next";
 
-import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { CandlestickChart } from "lucide-react";
+import { ChartContent } from "./chart-client";
 
-export const metadata: Metadata = {
-  title: "차트 | Stock Intelligence",
-};
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ ticker: string }>;
+}): Promise<Metadata> {
+  const { ticker } = await params;
+  return {
+    title: `${ticker} 차트`,
+    description: `${ticker} 캔들스틱 차트 및 기술적 지표 (RSI/MACD/BB/SMA)`,
+  };
+}
 
 export default async function ChartPage({
   params,
@@ -17,19 +25,15 @@ export default async function ChartPage({
   return (
     <div className="space-y-6 p-4 md:p-6">
       <div>
-        <Badge variant="outline" className="mb-2">{ticker}</Badge>
-        <h1 className="text-2xl font-bold">{ticker} 차트</h1>
+        <h1 className="flex items-center gap-2 text-2xl font-bold">
+          <CandlestickChart className="size-6" />
+          {ticker} 차트
+        </h1>
         <p className="text-muted-foreground mt-1 text-sm">
-          기술적 지표 (RSI / MACD / BB) 차트
+          가격 데이터 및 기술적 지표 (RSI / MACD / BB / SMA)
         </p>
       </div>
-      <Card>
-        <CardContent className="p-6">
-          <p className="text-muted-foreground text-sm text-center">
-            백엔드 연동 후 TradingView 차트가 표시됩니다.
-          </p>
-        </CardContent>
-      </Card>
+      <ChartContent ticker={ticker} />
     </div>
   );
 }

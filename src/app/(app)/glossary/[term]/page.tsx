@@ -1,11 +1,19 @@
 import type { Metadata } from "next";
 
-import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { GlossaryTermContent } from "./term-client";
 
-export const metadata: Metadata = {
-  title: "용어 상세 | Stock Intelligence",
-};
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ term: string }>;
+}): Promise<Metadata> {
+  const { term } = await params;
+  const decoded = decodeURIComponent(term);
+  return {
+    title: `${decoded} | 용어사전`,
+    description: `투자 용어 "${decoded}"의 정의와 설명`,
+  };
+}
 
 export default async function GlossaryTermPage({
   params,
@@ -14,18 +22,5 @@ export default async function GlossaryTermPage({
 }) {
   const { term } = await params;
 
-  return (
-    <div className="space-y-6 p-4 md:p-6">
-      <div>
-        <h1 className="text-2xl font-bold">{decodeURIComponent(term)}</h1>
-      </div>
-      <Card>
-        <CardContent className="p-6">
-          <p className="text-muted-foreground text-sm">
-            백엔드 연동 후 용어 설명이 표시됩니다.
-          </p>
-        </CardContent>
-      </Card>
-    </div>
-  );
+  return <GlossaryTermContent term={term} />;
 }

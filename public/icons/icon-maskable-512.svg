@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" fill="none">
+  <rect width="512" height="512" fill="#09090b"/>
+  <path d="M128 336L192 224L272 272L352 160L416 208" stroke="#16a34a" stroke-width="14" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M128 336L192 280L272 312L352 224L416 248" stroke="#3b82f6" stroke-width="10" stroke-linecap="round" stroke-linejoin="round" opacity="0.6"/>
+  <text x="256" y="408" text-anchor="middle" fill="white" font-family="system-ui" font-size="48" font-weight="700">StockAI</text>
+</svg>

@@ -1,10 +1,17 @@
-"""APScheduler 기반 크론잡 — ETF 동기화 + 거시 수집 + 감성 분석 + 통합 스코어링."""
+"""APScheduler 기반 크론잡 — ETF 동기화 + 거시 수집 + 감성 분석 + 통합 스코어링 + 지정학 + 공포탐욕 + 가이드."""
 
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.cron import CronTrigger
 
 from app.dependencies import get_supabase
-from app.services import alert_service, etf_service, prediction_service
+from app.services import (
+    alert_service,
+    etf_service,
+    fear_greed_service,
+    geo_service,
+    guide_service,
+    prediction_service,
+)
 from app.services.macro_collector import collect_macro_data
 from app.services.sentiment_service import collect_and_analyze
 from app.services.supabase_client import insert_snapshot
@@ -47,6 +54,21 @@ def _scheduled_macro_collect():
         logger.error("Scheduled macro collection failed: %s", e)
 
 
+def _scheduled_geo_collect():
+    """스케줄러에 의해 호출되는 지정학 뉴스 수집 + AI 분류 작업."""
+    logger.info("Scheduled geo collection started")
+    try:
+        client = get_supabase()
+        result = geo_service.collect_and_analyze(client)
+        logger.info(
+            "Scheduled geo done — collected=%d, events=%d",
+            result.get("articles_collected", 0),
+            result.get("events_created", 0),
+        )
+    except Exception as e:
+        logger.error("Scheduled geo collection failed: %s", e)
+
+
 def _scheduled_sentiment_collect():
     """스케줄러에 의해 호출되는 뉴스 감성 분석 작업."""
     logger.info("Scheduled sentiment collection started")
@@ -60,6 +82,21 @@ def _scheduled_sentiment_collect():
         )
     except Exception as e:
         logger.error("Scheduled sentiment collection failed: %s", e)
+
+
+def _scheduled_fear_greed_collect():
+    """스케줄러에 의해 호출되는 공포/탐욕 지수 계산 작업."""
+    logger.info("Scheduled fear/greed collection started")
+    try:
+        client = get_supabase()
+        result = fear_greed_service.collect_fear_greed(client)
+        logger.info(
+            "Scheduled fear/greed done — index=%d (%s)",
+            result.get("index_value", 0),
+            result.get("label", "N/A"),
+        )
+    except Exception as e:
+        logger.error("Scheduled fear/greed collection failed: %s", e)
 
 
 def _scheduled_prediction_scoring():
@@ -122,6 +159,21 @@ def _scheduled_prediction_scoring():
         logger.error("Scheduled prediction scoring failed: %s", e)
 
 
+def _scheduled_guide_generation():
+    """스케줄러에 의해 호출되는 일간 투자 가이드 생성 작업."""
+    logger.info("Scheduled guide generation started")
+    try:
+        client = get_supabase()
+        result = guide_service.generate_daily_guide(client)
+        logger.info(
+            "Scheduled guide done — date=%s, success=%s",
+            result.get("briefing_date", "N/A"),
+            result.get("success", False),
+        )
+    except Exception as e:
+        logger.error("Scheduled guide generation failed: %s", e)
+
+
 def _scheduled_price_alert_check():
     """스케줄러에 의해 호출되는 가격 알림 체크 작업."""
     logger.info("Scheduled price alert check started")
@@ -157,12 +209,15 @@ def _scheduled_risk_alert_check():
 def start_scheduler():
     """스케줄러를 시작한다.
 
-    - ETF 동기화:    06:30 KST (1일 1회)
-    - 거시 수집:     07:00 / 13:00 / 18:00 KST
-    - 감성 분석:     08:00 / 14:00 / 19:00 KST (거시 +1h)
-    - 통합 스코어링: 09:00 / 15:00 / 20:00 KST (감성 +1h)
-    - 리스크 알림:   09:30 / 15:30 / 20:30 KST (스코어링 +30m)
-    - 가격 알림:     07:00~23:50, 10분 간격
+    - ETF 동기화:       06:30 KST (1일 1회)
+    - 거시 수집:        07:00 / 13:00 / 18:00 KST
+    - 지정학 수집:      07:30 / 13:30 / 18:30 KST (거시 +30m)
+    - 감성 분석:        08:00 / 14:00 / 19:00 KST (지정학 +30m)
+    - 공포/탐욕 계산:   08:30 / 14:30 / 19:30 KST (감성 +30m)
+    - 통합 스코어링:    09:00 / 15:00 / 20:00 KST (공포탐욕 +30m)
+    - 리스크 알림:      09:30 / 15:30 / 20:30 KST (스코어링 +30m)
+    - 가이드 생성:      09:30 / 15:30 / 20:30 KST (리스크와 동시)
+    - 가격 알림:        07:00~23:50, 10분 간격
     """
     scheduler.add_job(
         _scheduled_etf_sync,
@@ -179,10 +234,24 @@ def start_scheduler():
         replace_existing=True,
     )
     scheduler.add_job(
+        _scheduled_geo_collect,
+        trigger=CronTrigger(hour="7,13,18", minute="30", timezone="Asia/Seoul"),
+        id="geo_collection",
+        name="Geopolitical News Collection",
+        replace_existing=True,
+    )
+    scheduler.add_job(
         _scheduled_sentiment_collect,
         trigger=CronTrigger(hour="8,14,19", timezone="Asia/Seoul"),
         id="sentiment_collection",
         name="News Sentiment Analysis",
+        replace_existing=True,
+    )
+    scheduler.add_job(
+        _scheduled_fear_greed_collect,
+        trigger=CronTrigger(hour="8,14,19", minute="30", timezone="Asia/Seoul"),
+        id="fear_greed_collection",
+        name="Fear & Greed Index Calculation",
         replace_existing=True,
     )
     scheduler.add_job(
@@ -210,10 +279,20 @@ def start_scheduler():
         name="Risk Alert Check",
         replace_existing=True,
     )
+    scheduler.add_job(
+        _scheduled_guide_generation,
+        trigger=CronTrigger(
+            hour="9,15,20", minute="30", timezone="Asia/Seoul",
+        ),
+        id="guide_generation",
+        name="Daily Guide Generation",
+        replace_existing=True,
+    )
     scheduler.start()
     logger.info(
-        "Scheduler started — etf 06:30, macro 07/13/18, sentiment 08/14/19, "
-        "prediction 09/15/20, risk 09:30/15:30/20:30, "
+        "Scheduler started — etf 06:30, macro 07/13/18, geo 07:30/13:30/18:30, "
+        "sentiment 08/14/19, fear-greed 08:30/14:30/19:30, "
+        "prediction 09/15/20, risk+guide 09:30/15:30/20:30, "
         "price-alert every 10min (07~23) KST"
     )
 

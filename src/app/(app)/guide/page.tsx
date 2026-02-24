@@ -1,11 +1,10 @@
 import type { Metadata } from "next";
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { TrendingUp } from "lucide-react";
+import { GuideContent } from "./guide-client";
 
 export const metadata: Metadata = {
-  title: "투자 가이드 | Stock Intelligence",
+  title: "투자 가이드",
+  description: "거시경제+지정학 분석 기반 매수·매도·홀딩 투자 가이드",
 };
 
 export default function GuidePage() {
@@ -18,15 +17,7 @@ export default function GuidePage() {
         </p>
       </div>
 
-      <Card>
-        <CardContent className="flex flex-col items-center justify-center p-12 text-center">
-          <TrendingUp className="text-muted-foreground mb-3 size-12" />
-          <h3 className="font-semibold">가이드 준비 중</h3>
-          <p className="text-muted-foreground mt-1 text-sm">
-            백엔드 스케줄러가 매일 07:30 KST에 가이드를 자동 생성합니다.
-          </p>
-        </CardContent>
-      </Card>
+      <GuideContent />
     </div>
   );
 }

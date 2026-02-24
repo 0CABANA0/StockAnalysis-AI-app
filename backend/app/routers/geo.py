@@ -4,6 +4,7 @@ from supabase import Client
 from app.dependencies import get_supabase
 from app.middleware.auth import CurrentUser, get_current_user, require_admin
 from app.models.geo import GeoCurrentResponse, GeoImpactResponse, GeoRisk, GeoRiskDetailResponse, GeoEvent
+from app.services import geo_service
 from app.utils.logger import get_logger
 
 logger = get_logger(__name__)
@@ -17,8 +18,8 @@ def collect_geo(
     client: Client = Depends(get_supabase),
 ):
     """지정학 뉴스 수집 + AI 분석. (ADMIN 전용)"""
-    # TODO: geo_service.collect_and_analyze()
-    return {"success": True, "message": "Geo collection not yet implemented"}
+    result = geo_service.collect_and_analyze(client)
+    return result
 
 
 @router.get("/current", response_model=GeoCurrentResponse)

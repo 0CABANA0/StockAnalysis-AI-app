@@ -16,7 +16,8 @@ import {
 } from "lucide-react";
 
 export const metadata: Metadata = {
-  title: "더보기 | Stock Intelligence",
+  title: "더보기",
+  description: "추가 기능 및 설정 메뉴",
 };
 
 const menuItems = [

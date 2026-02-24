@@ -25,6 +25,7 @@ class SentimentResult(BaseModel):
     confidence: float | None = None  # 0 ~ 1.0
     event_type: str | None = None  # GEOPOLITICAL | ECONOMIC | CURRENCY | REGULATORY | NATURAL
     urgency: str = "LOW"  # LOW | MEDIUM | HIGH
+    news_category: str | None = None  # 9개 카테고리 분류
     reasoning: str | None = None
     affected_sectors: list[str] | None = None
     affected_countries: list[str] | None = None
@@ -32,6 +33,17 @@ class SentimentResult(BaseModel):
     medium_term_impact: str | None = None
     analyzed_at: datetime | None = None
     created_at: datetime | None = None
+
+
+class NewsCategoryConfig(BaseModel):
+    """뉴스 카테고리 설정."""
+
+    category_key: str
+    display_name: str
+    description: str | None = None
+    keywords: list[str]
+    is_active: bool = True
+    sort_order: int = 0
 
 
 # --- API 응답 ---
@@ -49,3 +61,7 @@ class SentimentResultsResponse(BaseModel):
     total: int
     limit: int
     offset: int
+
+
+class NewsCategoriesResponse(BaseModel):
+    categories: list[NewsCategoryConfig]
