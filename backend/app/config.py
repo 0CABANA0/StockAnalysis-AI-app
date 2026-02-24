@@ -12,16 +12,21 @@ class Settings(BaseSettings):
     # Scheduler
     scheduler_enabled: bool = True
 
-    # OpenRouter (Day 3+)
+    # OpenRouter
     openrouter_api_key: str = ""
 
-    # Telegram (Day 5+)
+    # Telegram
     telegram_bot_token: str = ""
     telegram_chat_id: str = ""
     telegram_bot_enabled: bool = False
 
-    # KOFIA (Module F — Phase 2)
+    # KOFIA
     kofia_api_key: str = ""
+
+    # v2.0 신규
+    fred_api_key: str = ""
+    ecos_api_key: str = ""
+    app_domain: str = "http://localhost:3000"
 
     model_config = {"env_file": ".env", "env_file_encoding": "utf-8"}
 

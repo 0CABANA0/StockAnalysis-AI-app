@@ -15,8 +15,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "StockAnalysis AI",
-  description: "AI 기반 주식 분석 대시보드",
+  title: "Stock Intelligence",
+  description: "거시경제 + 지정학 기반 AI 투자 가이드 플랫폼",
 };
 
 export default function RootLayout({
