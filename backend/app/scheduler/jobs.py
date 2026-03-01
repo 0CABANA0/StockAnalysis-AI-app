@@ -11,6 +11,7 @@ from app.services import (
     geo_service,
     guide_service,
     prediction_service,
+    weekly_report_service,
 )
 from app.services.macro_collector import collect_macro_data
 from app.services.sentiment_service import collect_and_analyze
@@ -174,6 +175,21 @@ def _scheduled_guide_generation():
         logger.error("Scheduled guide generation failed: %s", e)
 
 
+def _scheduled_weekly_report():
+    """스케줄러에 의해 호출되는 주간 리포트 생성 작업 (매주 일요일 21:00 KST)."""
+    logger.info("Scheduled weekly report generation started")
+    try:
+        client = get_supabase()
+        result = weekly_report_service.generate_weekly_report(client)
+        logger.info(
+            "Scheduled weekly report done — week=%s, success=%s",
+            result.get("week_start_date", "N/A"),
+            result.get("success", False),
+        )
+    except Exception as e:
+        logger.error("Scheduled weekly report generation failed: %s", e)
+
+
 def _scheduled_price_alert_check():
     """스케줄러에 의해 호출되는 가격 알림 체크 작업."""
     logger.info("Scheduled price alert check started")
@@ -288,12 +304,21 @@ def start_scheduler():
         name="Daily Guide Generation",
         replace_existing=True,
     )
+    scheduler.add_job(
+        _scheduled_weekly_report,
+        trigger=CronTrigger(
+            day_of_week="sun", hour=21, minute=0, timezone="Asia/Seoul",
+        ),
+        id="weekly_report",
+        name="Weekly Report Generation",
+        replace_existing=True,
+    )
     scheduler.start()
     logger.info(
         "Scheduler started — etf 06:30, macro 07/13/18, geo 07:30/13:30/18:30, "
         "sentiment 08/14/19, fear-greed 08:30/14:30/19:30, "
         "prediction 09/15/20, risk+guide 09:30/15:30/20:30, "
-        "price-alert every 10min (07~23) KST"
+        "price-alert every 10min (07~23), weekly-report Sun 21:00 KST"
     )
 
 

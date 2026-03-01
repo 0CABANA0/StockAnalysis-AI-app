@@ -54,3 +54,31 @@ class TodayGuideResponse(BaseModel):
 
 class TickerGuideResponse(BaseModel):
     guide: InvestmentGuide | None = None
+
+
+class WeeklyReportItem(BaseModel):
+    """주간 리포트 목록 항목."""
+
+    id: str
+    week_start_date: str
+    created_at: str
+
+
+class WeeklyReportDetail(BaseModel):
+    """주간 리포트 상세."""
+
+    id: str
+    week_start_date: str
+    macro_summary: str | None = None
+    geo_summary: str | None = None
+    next_week_outlook: str | None = None
+    strategy_guide: str | None = None
+    created_at: str
+
+
+class WeeklyReportListResponse(BaseModel):
+    reports: list[WeeklyReportItem]
+
+
+class WeeklyReportDetailResponse(BaseModel):
+    report: WeeklyReportDetail | None = None

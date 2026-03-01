@@ -16,6 +16,7 @@ import {
   MessageCircle,
   Star,
   LineChart,
+  FileText,
   Shield,
   Settings,
   Users,
@@ -55,6 +56,7 @@ const analysisNavItems: NavItem[] = [
 ];
 
 const utilNavItems: NavItem[] = [
+  { href: "/report/weekly", label: "주간 리포트", icon: FileText },
   { href: "/ask", label: "AI Q&A", icon: MessageCircle },
   { href: "/glossary", label: "용어사전", icon: BookOpen },
   { href: "/chart/SPY", label: "차트", icon: LineChart },
