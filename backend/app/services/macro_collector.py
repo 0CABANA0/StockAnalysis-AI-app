@@ -1,4 +1,4 @@
-"""yfinance 기반 거시경제 데이터 병렬 수집 서비스."""
+"""거시경제 데이터 통합 수집 서비스 (yfinance + FRED + ECOS)."""
 
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime, timezone
@@ -12,6 +12,8 @@ from app.models.macro import (
     RatesAndFear,
     SnapshotData,
 )
+from app.services.ecos_collector import collect_ecos_data
+from app.services.fred_collector import collect_fred_data
 from app.utils.logger import get_logger
 
 logger = get_logger(__name__)
@@ -55,8 +57,8 @@ def _fetch_price(ticker: str) -> float | None:
             price = t.fast_info["lastPrice"]
             if price and price > 0:
                 return round(float(price), 4)
-        except (KeyError, TypeError, AttributeError):
-            pass
+        except (KeyError, TypeError, AttributeError) as e:
+            logger.debug("fast_info fallback for %s: %s", ticker, e)
 
         # 2차: history fallback
         hist = t.history(period="1d")
@@ -80,6 +82,10 @@ def collect_macro_data() -> tuple[SnapshotData, list[str], datetime]:
     failed: list[str] = []
 
     with ThreadPoolExecutor(max_workers=MAX_WORKERS) as executor:
+        # yfinance + FRED + ECOS 모두 동시 수집
+        fred_future = executor.submit(collect_fred_data)
+        ecos_future = executor.submit(collect_ecos_data)
+
         future_to_ticker = {
             executor.submit(_fetch_price, ticker): ticker
             for ticker in TICKERS
@@ -99,6 +105,9 @@ def collect_macro_data() -> tuple[SnapshotData, list[str], datetime]:
                 logger.error("  %s (%s) error: %s", ticker, field, e)
                 results[field] = None
                 failed.append(ticker)
+
+        fred_indicators = fred_future.result()
+        ecos_indicators = ecos_future.result()
 
     snapshot = SnapshotData(
         exchange_rates=ExchangeRates(
@@ -124,11 +133,15 @@ def collect_macro_data() -> tuple[SnapshotData, list[str], datetime]:
             nikkei=results.get("nikkei"),
             shanghai=results.get("shanghai"),
         ),
+        fred=fred_indicators,
+        ecos=ecos_indicators,
     )
 
     logger.info(
-        "Macro collection done — %d/%d succeeded",
+        "Macro collection done — yfinance %d/%d, FRED %s, ECOS %s",
         len(TICKERS) - len(failed),
         len(TICKERS),
+        "active" if fred_indicators.fed_funds_rate is not None else "skipped",
+        "active" if ecos_indicators.bok_base_rate is not None else "skipped",
     )
     return snapshot, failed, collected_at
