@@ -253,7 +253,7 @@ CREATE POLICY fear_greed_read ON fear_greed_snapshots FOR SELECT TO authenticate
 
 CREATE OR REPLACE TRIGGER set_updated_at_geopolitical_risks
   BEFORE UPDATE ON geopolitical_risks
-  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+  FOR EACH ROW EXECUTE FUNCTION update_updated_at();
 
 -- ── 기존 테이블 비활성 표시 (데이터 보존, 삭제 안 함) ──
 COMMENT ON TABLE portfolio IS 'DEPRECATED v2.0 — watchlist로 대체. 데이터 보존용.';
