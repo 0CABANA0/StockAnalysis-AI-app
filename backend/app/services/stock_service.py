@@ -285,8 +285,8 @@ def _fetch_single_quote(ticker: str) -> StockQuote:
             change = round(price - float(prev), 2)
             change_percent = round((change / float(prev)) * 100, 2)
         volume = int(fi.get("lastVolume", 0)) or None
-    except (KeyError, TypeError, AttributeError):
-        pass
+    except (KeyError, TypeError, AttributeError) as e:
+        logger.debug("fast_info fallback for %s: %s", ticker, e)
 
     # history fallback
     if price is None:
@@ -309,8 +309,8 @@ def _fetch_single_quote(ticker: str) -> StockQuote:
     try:
         info = t.info
         name = info.get("shortName", "") or info.get("longName", "")
-    except Exception:
-        pass
+    except Exception as e:
+        logger.debug("종목명 조회 실패 (%s): %s", ticker, e)
 
     return StockQuote(
         ticker=ticker,

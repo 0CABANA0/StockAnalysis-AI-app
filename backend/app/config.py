@@ -7,7 +7,7 @@ class Settings(BaseSettings):
     supabase_service_key: str = ""
 
     # CORS
-    cors_origins: str = "http://localhost:3000"
+    cors_origins: str = "http://localhost:3000,http://localhost:4800"
 
     # Scheduler
     scheduler_enabled: bool = True

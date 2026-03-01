@@ -46,8 +46,8 @@ def _fetch_price_series(
         try:
             info = t.info
             name = info.get("shortName", "") or info.get("longName", "")
-        except Exception:
-            pass
+        except Exception as e:
+            logger.debug("종목명 조회 실패 (%s): %s", ticker, e)
 
         return ticker, prices, name
     except Exception as e:

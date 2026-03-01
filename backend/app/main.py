@@ -6,6 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.config import settings
 from app.routers import (
     admin,
+    alert,
     ask,
     calendar,
     etf,
@@ -16,6 +17,9 @@ from app.routers import (
     health,
     image,
     macro,
+    performance,
+    portfolio,
+    prediction,
     recommendation,
     sentiment,
     simulator,
@@ -92,3 +96,7 @@ app.include_router(ask.router)
 app.include_router(glossary.router)
 app.include_router(user.router)
 app.include_router(admin.router)
+app.include_router(alert.router)
+app.include_router(portfolio.router)
+app.include_router(performance.router)
+app.include_router(prediction.router)

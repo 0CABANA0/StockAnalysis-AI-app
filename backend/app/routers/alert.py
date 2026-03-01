@@ -30,8 +30,13 @@ async def create_alert(
     client = get_supabase()
     try:
         return alert_service.create_price_alert(client, user.user_id, req)
-    except Exception as e:
+    except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        logger.error("알림 생성 실패 (user=%s): %s", user.user_id, e)
+        raise HTTPException(
+            status_code=500, detail="알림 생성 중 오류가 발생했습니다."
+        )
 
 
 @router.get("/my", response_model=PriceAlertsListResponse)

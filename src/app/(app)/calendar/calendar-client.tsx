@@ -21,6 +21,21 @@ const typeLabel: Record<string, string> = {
   EARNINGS: "실적",
 };
 
+/** 티커 → 사용자 친화적 라벨 매핑 */
+const assetLabel: Record<string, string> = {
+  "^GSPC": "S&P 500",
+  "^IXIC": "나스닥",
+  "^TNX": "미 국채",
+  "KRW=X": "원/달러",
+  "^KS11": "코스피",
+  "005930.KS": "삼성전자",
+  "^DJI": "다우",
+  "^VIX": "VIX",
+  "CL=F": "유가",
+  "GC=F": "금",
+  "BTC-USD": "비트코인",
+};
+
 export function CalendarContent() {
   const [events, setEvents] = useState<EconomicCalendarEvent[]>([]);
   const [loading, setLoading] = useState(true);
@@ -97,38 +112,50 @@ export function CalendarContent() {
           <Card>
             <CardContent className="divide-y p-0">
               {grouped[dateStr].map((ev, i) => (
-                <div
-                  key={i}
-                  className="flex items-center gap-3 px-4 py-3"
-                >
-                  <Badge
-                    variant="outline"
-                    className="shrink-0 text-xs"
-                  >
-                    {typeLabel[ev.event_type] ?? ev.event_type}
-                  </Badge>
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-medium">
-                      {ev.event_title}
-                    </p>
-                    {ev.expected_impact && (
-                      <p className="text-muted-foreground truncate text-xs">
-                        {ev.expected_impact}
+                <div key={i} className="flex flex-col gap-1.5 px-4 py-3">
+                  <div className="flex items-center gap-3">
+                    <Badge variant="outline" className="shrink-0 text-xs">
+                      {typeLabel[ev.event_type] ?? ev.event_type}
+                    </Badge>
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-medium">
+                        {ev.event_title}
                       </p>
+                      {ev.expected_impact && (
+                        <p className="text-muted-foreground truncate text-xs">
+                          {ev.expected_impact}
+                        </p>
+                      )}
+                    </div>
+                    {ev.country && (
+                      <span className="text-muted-foreground shrink-0 text-xs">
+                        {ev.country}
+                      </span>
                     )}
+                    <Badge
+                      className={
+                        importanceBadge[ev.importance] ?? importanceBadge.LOW
+                      }
+                    >
+                      {ev.importance}
+                    </Badge>
                   </div>
-                  {ev.country && (
-                    <span className="text-muted-foreground shrink-0 text-xs">
-                      {ev.country}
-                    </span>
+                  {ev.affected_assets && ev.affected_assets.length > 0 && (
+                    <div className="flex flex-wrap gap-1 pl-[calc(3rem+0.75rem)]">
+                      <span className="text-muted-foreground text-[10px] leading-5">
+                        영향 →
+                      </span>
+                      {ev.affected_assets.map((asset) => (
+                        <Badge
+                          key={asset}
+                          variant="secondary"
+                          className="px-1.5 py-0 text-[10px]"
+                        >
+                          {assetLabel[asset] ?? asset}
+                        </Badge>
+                      ))}
+                    </div>
                   )}
-                  <Badge
-                    className={
-                      importanceBadge[ev.importance] ?? importanceBadge.LOW
-                    }
-                  >
-                    {ev.importance}
-                  </Badge>
                 </div>
               ))}
             </CardContent>
