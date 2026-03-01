@@ -16,6 +16,10 @@ import {
   Star,
   Menu,
   ChevronRight,
+  Crosshair,
+  Activity,
+  Briefcase,
+  Bell,
 } from "lucide-react";
 
 export const metadata: Metadata = {
@@ -24,6 +28,10 @@ export const metadata: Metadata = {
 };
 
 const menuItems = [
+  { href: "/prediction", label: "종합 스코어링", icon: Crosshair, desc: "5개 시그널 기반 투자 판단" },
+  { href: "/performance", label: "성과 분석", icon: Activity, desc: "다중 종목 성과 비교" },
+  { href: "/portfolio", label: "포트폴리오", icon: Briefcase, desc: "보유 종목 · 거래 관리" },
+  { href: "/alert", label: "가격 알림", icon: Bell, desc: "목표가 · 손절가 알림" },
   { href: "/macro", label: "거시경제", icon: BarChart3, desc: "글로벌 경제 지표" },
   { href: "/geo", label: "지정학 리스크", icon: Globe, desc: "지정학 이벤트 모니터링" },
   { href: "/etf", label: "ETF 스크리너", icon: LineChart, desc: "조건 검색 및 비교" },

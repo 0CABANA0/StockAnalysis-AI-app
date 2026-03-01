@@ -26,6 +26,9 @@ import {
   LogOut,
   ChevronLeft,
   ChevronRight,
+  Crosshair,
+  Activity,
+  Briefcase,
 } from "lucide-react";
 import { useState } from "react";
 
@@ -50,12 +53,16 @@ const analysisNavItems: NavItem[] = [
   { href: "/macro", label: "거시경제", icon: BarChart3 },
   { href: "/geo", label: "지정학 리스크", icon: Globe },
   { href: "/etf", label: "ETF 스크리너", icon: LineChart },
+  { href: "/prediction", label: "종합 스코어링", icon: Crosshair },
+  { href: "/performance", label: "성과 분석", icon: Activity },
   { href: "/fear-greed", label: "공포/탐욕 지수", icon: Gauge },
   { href: "/calendar", label: "경제 캘린더", icon: Calendar },
   { href: "/simulator", label: "시나리오", icon: FlaskConical },
 ];
 
 const utilNavItems: NavItem[] = [
+  { href: "/portfolio", label: "포트폴리오", icon: Briefcase },
+  { href: "/alert", label: "가격 알림", icon: Bell },
   { href: "/report/weekly", label: "주간 리포트", icon: FileText },
   { href: "/ask", label: "AI Q&A", icon: MessageCircle },
   { href: "/glossary", label: "용어사전", icon: BookOpen },
