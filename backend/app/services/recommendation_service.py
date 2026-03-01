@@ -124,6 +124,33 @@ def _get_screening_model(client: Client) -> str:
     return DEFAULT_SCREENING_MODEL
 
 
+def _fetch_market_causal_chain(client: Client) -> str:
+    """오늘의 daily_briefings에서 market_causal_chain을 가져온다."""
+    today_str = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    try:
+        res = (
+            client.table("daily_briefings")
+            .select("market_causal_chain")
+            .eq("briefing_date", today_str)
+            .limit(1)
+            .execute()
+        )
+        if res.data and res.data[0].get("market_causal_chain"):
+            chain = res.data[0]["market_causal_chain"]
+            lines = []
+            for i, step in enumerate(chain, 1):
+                lines.append(
+                    f"  {i}. [{step.get('direction', '')}] "
+                    f"{step.get('event', '')} → {step.get('impact', '')}"
+                )
+                if step.get("reasoning"):
+                    lines.append(f"     근거: {step['reasoning']}")
+            return "\n".join(lines)
+    except Exception as e:
+        logger.warning("Failed to fetch market causal chain: %s", e)
+    return ""
+
+
 def _generate_recommendation_reason(
     ticker: str,
     detail: ScreeningDetail,
@@ -141,7 +168,17 @@ def _generate_recommendation_reason(
         "Generating recommendation reason for %s with model: %s", ticker, model
     )
 
-    prompt = f"""당신은 전문 주식 분석가입니다. 아래 스크리닝 결과를 기반으로 투자 추천 근거를 작성하세요.
+    # 오늘의 거시경제 인과관계 체인 로드
+    causal_context = _fetch_market_causal_chain(client)
+    macro_section = ""
+    if causal_context:
+        macro_section = f"""
+## 오늘의 거시경제 인과관계 (투자 가이드에서 도출)
+{causal_context}
+"""
+
+    prompt = f"""당신은 독립적 주식 분석가입니다. 뉴스·증권사 리포트를 요약하지 마세요.
+아래 기술적 스크리닝 결과와 거시경제 인과관계를 종합하여 이 종목의 추천 근거를 작성하세요.
 
 ## 종목 정보
 - 티커: {ticker}
@@ -154,10 +191,15 @@ def _generate_recommendation_reason(
 - 볼린저밴드: {detail.bb_signal}
 - SMA: {detail.sma_signal}
 - PER: {detail.per}
+{macro_section}
+## 핵심 원칙
+1. 기술적 지표 + 거시경제 인과관계를 **연결**하여 추천 근거를 작성하세요.
+2. "왜 지금 이 종목인가?"를 거시경제 흐름에서 출발하여 설명하세요.
+3. 단순 수치 나열 금지 — 인과관계를 서사적으로 연결하세요.
 
 ## 응답 형식 (JSON만 반환)
 {{
-  "reason": "3-5문장의 투자 추천 근거 (한국어)",
+  "reason": "3-5문장 — 거시경제 인과관계에서 출발하여 이 종목이 왜 추천되는지 서사적으로 설명 (한국어)",
   "target_price": 목표가(숫자),
   "stop_loss": 손절가(숫자),
   "strategy": "SWING" | "POSITION" | "SCALPING",

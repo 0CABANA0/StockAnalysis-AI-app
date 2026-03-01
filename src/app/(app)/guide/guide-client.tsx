@@ -7,6 +7,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ErrorState } from "@/components/ui/error-state";
+import { CausalChain } from "@/components/guide/causal-chain";
 import { getTodayGuide } from "@/lib/api/guide";
 import type { TodayGuideResponse } from "@/lib/api/guide";
 import { TrendingUp } from "lucide-react";
@@ -102,6 +103,12 @@ export function GuideContent() {
           </CardContent>
         </Card>
       )}
+
+      {/* 시장 인과관계 체인 */}
+      <CausalChain
+        steps={guide.market_causal_chain}
+        title="오늘의 시장 인과관계"
+      />
 
       {/* 액션 카드 */}
       {guide.action_cards.length > 0 && (

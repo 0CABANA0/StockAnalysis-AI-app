@@ -41,7 +41,7 @@ def today_guide(
 ):
     """오늘의 액션 가이드."""
     today = date.today().isoformat()
-    result = client.table("daily_briefings").select("*").eq("briefing_date", today).single().execute()
+    result = client.table("daily_briefings").select("*").eq("briefing_date", today).execute()
 
     if not result.data:
         return TodayGuideResponse(
@@ -52,7 +52,7 @@ def today_guide(
             key_events=[],
         )
 
-    data = result.data
+    data = result.data[0]
     return TodayGuideResponse(
         briefing_date=data["briefing_date"],
         market_summary=data.get("market_summary"),
@@ -70,9 +70,9 @@ def ticker_guide(
 ):
     """개별 종목 가이드."""
     today = date.today().isoformat()
-    result = client.table("investment_guides").select("*").eq("ticker", ticker).eq("guide_date", today).single().execute()
+    result = client.table("investment_guides").select("*").eq("ticker", ticker).eq("guide_date", today).execute()
 
     if not result.data:
         return TickerGuideResponse(guide=None)
 
-    return TickerGuideResponse(guide=InvestmentGuide(**result.data))
+    return TickerGuideResponse(guide=InvestmentGuide(**result.data[0]))

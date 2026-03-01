@@ -294,11 +294,20 @@ export interface GeopoliticalEvent {
   created_at: string;
 }
 
+export interface CausalChainStep {
+  event: string;
+  impact: string;
+  reasoning: string;
+  affected_sectors: string[];
+  direction: "POSITIVE" | "NEGATIVE" | "MIXED" | "";
+}
+
 export interface InvestmentGuide {
   id: string;
   ticker: string;
   guide_date: string;
   action: GuideAction;
+  causal_chain: CausalChainStep[];
   macro_reasoning: string | null;
   geo_reasoning: string | null;
   technical_reasoning: string | null;
@@ -316,6 +325,7 @@ export interface DailyBriefing {
   briefing_date: string;
   market_summary: string | null;
   geo_summary: string | null;
+  market_causal_chain: CausalChainStep[];
   action_cards: ActionCard[];
   key_events: KeyEvent[];
   created_at: string;

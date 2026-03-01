@@ -3,6 +3,7 @@ import type {
   GuideAction,
   EventImportance,
   InvestmentGuide,
+  CausalChainStep,
 } from "@/types";
 
 interface ActionCard {
@@ -22,6 +23,7 @@ export interface TodayGuideResponse {
   briefing_date: string;
   market_summary: string | null;
   geo_summary: string | null;
+  market_causal_chain: CausalChainStep[];
   action_cards: ActionCard[];
   key_events: KeyEvent[];
 }

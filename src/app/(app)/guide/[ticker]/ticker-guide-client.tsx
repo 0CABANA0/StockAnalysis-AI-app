@@ -10,6 +10,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { ErrorState } from "@/components/ui/error-state";
 import { QuoteCard } from "@/components/charts/quote-card";
 import { IndicatorCards } from "@/components/charts/indicator-cards";
+import { CausalChain } from "@/components/guide/causal-chain";
 import { DisclaimerBanner } from "@/components/layout/disclaimer-banner";
 import { getTickerGuide } from "@/lib/api/guide";
 import { cn } from "@/lib/utils";
@@ -252,7 +253,13 @@ export function TickerGuideContent({ ticker }: { ticker: string }) {
             )}
           </div>
 
-          {/* [E] 3열 분석 카드 */}
+          {/* [E] 인과관계 체인 */}
+          <CausalChain
+            steps={guide.causal_chain}
+            title="거시경제 → 종목 영향 경로"
+          />
+
+          {/* [F] 3열 분석 카드 */}
           <div className="grid gap-4 md:grid-cols-3">
             <Card>
               <CardHeader className="pb-2">

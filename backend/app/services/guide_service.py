@@ -169,16 +169,31 @@ def generate_daily_guide(client: Client) -> dict:
 ## 시장 데이터
 {context_json}
 
+## 핵심 원칙
+1. 모든 분석에는 반드시 **근거 사유**(왜 이 현상이 발생하는가)와 **뒷받침 논리**(어떤 경제 원리·역사적 패턴이 이를 지지하는가)를 함께 제시하세요.
+2. market_causal_chain에서 거시경제·지정학 이벤트가 시장에 미치는 **연쇄 영향**을 단계별로 설명하세요.
+   예: 금값 상승 → 달러 약세 → 원/달러 환율 하락 → 수출기업 수익 감소 → 반대로 내수주 수혜
+3. 각 단계마다 "왜 이 연결이 성립하는지"를 reasoning 필드에 명확히 서술하세요.
+
 ## 응답 형식 (JSON만 반환)
 {{
-  "market_summary": "3-5문장의 오늘 시장 현황 요약 (한국어)",
-  "geo_summary": "2-3문장의 지정학 리스크 요약 (한국어)",
+  "market_summary": "3-5문장의 오늘 시장 현황 요약 (한국어). 핵심 지표 변동의 원인과 영향을 포함할 것.",
+  "geo_summary": "2-3문장의 지정학 리스크 요약 (한국어). 어떤 섹터/시장에 영향을 미치는지 명시할 것.",
+  "market_causal_chain": [
+    {{
+      "event": "원인 이벤트 (예: '미국 CPI 예상 상회 +0.3%p')",
+      "impact": "결과 영향 (예: '연준 금리 인하 기대 후퇴 → 국채금리 상승 → 성장주 약세')",
+      "reasoning": "근거 사유 + 뒷받침 논리 (예: 'CPI 상승은 인플레이션 지속을 의미하며, 연준은 물가 안정 목표 2%를 달성할 때까지 긴축 기조를 유지할 가능성이 높다. 역사적으로 금리 인상기에는 성장주의 밸류에이션 부담이 커진다.')",
+      "affected_sectors": ["반도체", "테크", "바이오"],
+      "direction": "NEGATIVE 또는 POSITIVE 또는 MIXED"
+    }}
+  ],
   "action_cards": [
     {{
       "ticker": "종목코드 (예: AAPL, 005930.KS)",
       "company_name": "회사명 (한국어)",
       "action": "BUY, SELL, HOLD, WATCH, AVOID 중 하나",
-      "reason": "1-2문장의 근거 (한국어)"
+      "reason": "2-3문장의 근거 — 왜 이 판단인지 인과관계를 포함하여 설명 (한국어)"
     }}
   ],
   "key_events": [
@@ -190,7 +205,8 @@ def generate_daily_guide(client: Client) -> dict:
   ]
 }}
 
-action_cards는 3~6개, key_events는 2~5개로 작성하세요.
+market_causal_chain은 3~5단계, action_cards는 3~6개, key_events는 2~5개로 작성하세요.
+market_causal_chain의 각 단계는 이전 단계의 결과가 다음 단계의 원인이 되도록 연쇄적으로 구성하세요.
 JSON만 응답하세요. 다른 텍스트 포함 금지."""
 
     try:
@@ -220,6 +236,7 @@ JSON만 응답하세요. 다른 텍스트 포함 금지."""
         "briefing_date": today_str,
         "market_summary": guide.get("market_summary"),
         "geo_summary": guide.get("geo_summary"),
+        "market_causal_chain": guide.get("market_causal_chain", []),
         "action_cards": guide.get("action_cards", []),
         "key_events": guide.get("key_events", []),
     }
@@ -312,8 +329,8 @@ def generate_ticker_guide(client: Client, ticker: str) -> dict:
         quote = stock_service.fetch_quote(ticker)
         company_name = quote.name or ticker
         tech_data["current_price"] = quote.price
-    except Exception:
-        pass
+    except Exception as e:
+        logger.warning("종목 시세 조회 실패 (%s): %s", ticker, e)
 
     if not settings.openrouter_api_key:
         logger.warning("OPENROUTER_API_KEY not set — generating fallback ticker guide")
@@ -325,26 +342,45 @@ def generate_ticker_guide(client: Client, ticker: str) -> dict:
         default=str,
     )
 
-    prompt = f"""당신은 전문 투자 분석가입니다. 아래 데이터를 기반으로 {ticker} ({company_name}) 종목의 투자 가이드를 작성하세요.
+    prompt = f"""당신은 독립적 투자 분석가입니다. 뉴스·증권사 리포트를 단순 요약하지 마세요.
+아래 데이터를 기반으로 {ticker} ({company_name}) 종목의 투자 가이드를 **인과관계 중심**으로 작성하세요.
+
+## 오늘 날짜: {today_str}
 
 ## 분석 데이터
 {context_json}
 
+## 핵심 원칙
+1. **뉴스 요약 금지**: "~가 예상됩니다", "~전망입니다" 같은 증권사 투로 금지. 대신 "A이므로 → B가 발생하고 → 이 종목에 C 영향"처럼 인과관계를 직접 추론하세요.
+2. **causal_chain이 근거**: 거시경제·지정학 데이터에서 이 종목까지 이어지는 영향 경로를 단계별로 구성하고, 이 체인이 action(매수/매도/홀딩) 판단의 **직접적 근거**가 되어야 합니다.
+3. **초보자 교육**: 각 단계의 reasoning에 "왜 이 연결이 성립하는지" 경제 원리를 초보자도 이해할 수 있게 설명하세요.
+4. **구체적 수치 인용**: 데이터에 있는 실제 수치(VIX, 환율, RSI 등)를 reasoning에 포함하세요.
+
 ## 응답 형식 (JSON만 반환)
 {{
   "action": "BUY, SELL, HOLD, WATCH, AVOID 중 하나",
-  "macro_reasoning": "거시경제 관점 분석 (2-3문장, 한국어)",
-  "geo_reasoning": "지정학 관점 분석 (2-3문장, 한국어)",
-  "technical_reasoning": "기술적 분석 관점 (2-3문장, 한국어)",
+  "causal_chain": [
+    {{
+      "event": "거시경제/지정학 원인 이벤트 (예: 'VIX 22.5로 불안 심리 확대')",
+      "impact": "이 종목에 미치는 연쇄 영향 (예: '반도체 수요 전망 하향 → {company_name} 실적 우려')",
+      "reasoning": "왜 이 연결이 성립하는지 경제 원리 설명 — 초보자도 이해 가능하게 (예: 'VIX가 20을 넘으면 기관 투자자들이 위험자산 비중을 줄이는 경향이 있고, 이는 성장주 중심으로 매도 압력을 만든다.')",
+      "affected_sectors": ["이 종목이 속한 섹터", "연관 섹터"],
+      "direction": "NEGATIVE 또는 POSITIVE 또는 MIXED"
+    }}
+  ],
+  "macro_reasoning": "거시경제 관점 분석 — causal_chain에서 도출된 핵심 논리 요약 (3-4문장, 한국어)",
+  "geo_reasoning": "지정학 관점 분석 — 현재 리스크가 이 종목에 미치는 구체적 영향 경로 (3-4문장, 한국어)",
+  "technical_reasoning": "기술적 분석 — RSI/MACD/BB 등 수치를 인용하며 매매 타이밍 근거 (3-4문장, 한국어)",
   "target_price": 목표가 (숫자, 설정 불가 시 null),
   "stop_loss": 손절가 (숫자, 설정 불가 시 null),
   "confidence": 0.0~1.0 신뢰도,
-  "risk_tags": ["리스크1", "리스크2"],
-  "fx_impact": "환율 영향 한 줄 요약",
-  "full_report_text": "종합 투자 의견 5-8문장 (한국어)"
+  "risk_tags": ["구체적 리스크 — 예: 금리인상", "환율변동"],
+  "fx_impact": "환율 변동이 이 종목에 미치는 구체적 영향 (단순 '부정적' 말고 왜 부정적인지)",
+  "full_report_text": "종합 투자 의견 — causal_chain 전체를 서사적으로 연결하여 '왜 이 판단인지' 초보자가 읽고 이해할 수 있게 작성 (6-10문장, 한국어)"
 }}
 
-JSON만 응답하세요."""
+causal_chain은 3~5단계, 거시경제 → 산업 → 이 종목으로 좁혀가며 연쇄 구성하세요.
+JSON만 응답하세요. 다른 텍스트 포함 금지."""
 
     try:
         response = httpx.post(
@@ -373,6 +409,7 @@ JSON만 응답하세요."""
         "ticker": ticker,
         "guide_date": today_str,
         "action": guide.get("action", "WATCH"),
+        "causal_chain": guide.get("causal_chain", []),
         "macro_reasoning": guide.get("macro_reasoning"),
         "geo_reasoning": guide.get("geo_reasoning"),
         "technical_reasoning": guide.get("technical_reasoning"),
