@@ -55,3 +55,19 @@ interface MacroEtfSuggestionsResponse {
 export async function getMacroEtfSuggestions(): Promise<MacroEtfSuggestionsResponse> {
   return apiFetch("/etf/macro/suggestions");
 }
+
+// ─── 관리자 전용 ───
+
+export interface EtfSyncResult {
+  domestic_count: number;
+  foreign_count: number;
+  fund_count: number;
+  total_count: number;
+  failed_tickers: string[];
+  synced_at: string;
+}
+
+/** [관리자] ETF 데이터 동기화 */
+export async function syncEtfData(): Promise<EtfSyncResult> {
+  return apiFetch<EtfSyncResult>("/etf/sync", { method: "POST" });
+}

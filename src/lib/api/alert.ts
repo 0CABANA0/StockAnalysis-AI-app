@@ -53,3 +53,34 @@ export async function deleteAlert(
 ): Promise<{ success: boolean; message: string }> {
   return apiFetch(`/alert/${alertId}`, { method: "DELETE" });
 }
+
+// ─── 관리자 전용 ───
+
+export interface AlertCheckResult {
+  checked_count: number;
+  triggered_count: number;
+  notified_count: number;
+  failed_tickers: string[];
+  checked_at: string;
+}
+
+export interface RiskAlertResult {
+  vix_alert: boolean;
+  vix_value: number | null;
+  geopolitical_alert: boolean;
+  high_urgency_count: number;
+  currency_alert: boolean;
+  usd_krw_change_pct: number | null;
+  notifications_sent: number;
+  checked_at: string;
+}
+
+/** [관리자] 가격 알림 수동 확인 */
+export async function checkPriceAlerts(): Promise<AlertCheckResult> {
+  return apiFetch<AlertCheckResult>("/alert/check", { method: "POST" });
+}
+
+/** [관리자] 리스크 알림 수동 확인 (VIX·환율·지정학) */
+export async function checkRiskAlerts(): Promise<RiskAlertResult> {
+  return apiFetch<RiskAlertResult>("/alert/risk-check", { method: "POST" });
+}
