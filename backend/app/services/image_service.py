@@ -19,7 +19,12 @@ from app.models.image import (
     RecognizedHolding,
     SectorAnalysis,
 )
+from app.services.alert_service import create_alerts_from_holdings
 from app.services.supabase_client import get_latest
+from app.services.telegram_service import (
+    format_auto_registration_summary,
+    send_to_user_sync,
+)
 from app.utils.logger import get_logger
 
 logger = get_logger(__name__)
@@ -354,11 +359,57 @@ def _log_analysis(
 # ═══════════════════════════════════════════════════════════
 
 
+def _derive_market(ticker: str) -> str:
+    """티커 접미사로 시장을 판별한다."""
+    if ticker.endswith(".KS") or ticker.endswith(".KQ"):
+        return "KR"
+    return "US"
+
+
+def _auto_register_watchlist(
+    client: Client,
+    user_id: str,
+    holdings: list[RecognizedHolding],
+) -> int:
+    """OCR 추출 종목을 관심종목에 자동 등록한다. 중복은 건너뛴다."""
+    # 기존 관심종목 조회
+    existing = (
+        client.table("watchlist")
+        .select("ticker")
+        .eq("user_id", user_id)
+        .execute()
+    )
+    existing_tickers = {r["ticker"] for r in (existing.data or [])}
+
+    added = 0
+    for h in holdings:
+        if not h.ticker or h.ticker in existing_tickers:
+            continue
+        try:
+            client.table("watchlist").insert({
+                "user_id": user_id,
+                "ticker": h.ticker,
+                "company_name": h.name,
+                "market": _derive_market(h.ticker),
+                "asset_type": "STOCK",
+            }).execute()
+            existing_tickers.add(h.ticker)
+            added += 1
+        except Exception as e:
+            logger.warning("Auto watchlist failed for %s: %s", h.ticker, e)
+
+    if added:
+        logger.info("Auto-added %d tickers to watchlist for user %s", added, user_id)
+    return added
+
+
 def analyze_image(
     image_data: str,
     media_type: str,
     client: Client,
     user_id: str,
+    auto_register_alerts: bool = False,
+    auto_register_watchlist: bool = False,
 ) -> ImageAnalysisResponse:
     """이미지 OCR → 종목 검증 → AI 투자 가이드 파이프라인을 실행한다."""
     start_ms = int(time.time() * 1000)
@@ -399,13 +450,41 @@ def analyze_image(
     # 4. AI 투자 가이드 생성
     guide = _generate_investment_guide(holdings, client)
 
-    # 5. 로그 기록
+    # 5. 자동 등록 (가격 알림 + 관심종목)
+    alerts_created = 0
+    watchlist_added = 0
+
+    if auto_register_alerts and guide and guide.recommendations:
+        try:
+            alerts_created = create_alerts_from_holdings(
+                client, user_id, guide.recommendations,
+            )
+        except Exception as e:
+            logger.error("Auto alert registration failed: %s", e)
+
+    if auto_register_watchlist and holdings:
+        try:
+            watchlist_added = _auto_register_watchlist(client, user_id, holdings)
+        except Exception as e:
+            logger.error("Auto watchlist registration failed: %s", e)
+
+    # 5-1. 텔레그램 알림 (등록된 항목이 있을 때만)
+    if alerts_created > 0 or watchlist_added > 0:
+        try:
+            msg = format_auto_registration_summary(
+                alerts_created, watchlist_added, len(holdings),
+            )
+            send_to_user_sync(user_id, msg)
+        except Exception as e:
+            logger.warning("Telegram auto-reg notification failed: %s", e)
+
+    # 6. 로그 기록
     _log_analysis(client, user_id, True, len(holdings))
 
-    # 6. 이미지 데이터 참조 해제 (호출자의 변수는 별도)
+    # 7. 이미지 데이터 참조 해제 (호출자의 변수는 별도)
     del image_data
 
-    # 7. 결과 반환
+    # 8. 결과 반환
     elapsed_ms = int(time.time() * 1000) - start_ms
     verified_count = sum(1 for h in holdings if h.verified)
 
@@ -417,9 +496,12 @@ def analyze_image(
         status = "PARTIAL"
 
     logger.info(
-        "Image analysis completed: %d holdings, %d verified, %dms",
+        "Image analysis completed: %d holdings, %d verified, "
+        "%d alerts, %d watchlist, %dms",
         len(holdings),
         verified_count,
+        alerts_created,
+        watchlist_added,
         elapsed_ms,
     )
 
@@ -428,4 +510,6 @@ def analyze_image(
         investment_guide=guide,
         validation_status=status,
         processing_time_ms=elapsed_ms,
+        auto_alerts_created=alerts_created,
+        auto_watchlist_added=watchlist_added,
     )

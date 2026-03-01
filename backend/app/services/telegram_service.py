@@ -97,6 +97,41 @@ async def send_to_user_async(user_id: str, text: str) -> bool:
         return False
 
 
+def send_to_user_sync(user_id: str, text: str) -> bool:
+    """send_to_user_async의 동기 래퍼 — sync 컨텍스트에서 호출한다."""
+    try:
+        loop = asyncio.get_running_loop()
+    except RuntimeError:
+        loop = None
+
+    if loop and loop.is_running():
+        with ThreadPoolExecutor(max_workers=1) as pool:
+            future = pool.submit(asyncio.run, send_to_user_async(user_id, text))
+            return future.result(timeout=30)
+    else:
+        return asyncio.run(send_to_user_async(user_id, text))
+
+
+def format_auto_registration_summary(
+    alerts_created: int,
+    watchlist_added: int,
+    holdings_count: int,
+) -> str:
+    """이미지 분석 자동 등록 결과를 HTML 포맷으로 반환한다."""
+    lines = ["<b>📸 이미지 분석 자동 등록 완료</b>", ""]
+    lines.append(f"분석 종목: <b>{holdings_count}</b>개")
+
+    if alerts_created > 0:
+        lines.append(f"🔔 가격 알림 등록: <b>{alerts_created}</b>건")
+    if watchlist_added > 0:
+        lines.append(f"⭐ 관심종목 등록: <b>{watchlist_added}</b>건")
+
+    if alerts_created == 0 and watchlist_added == 0:
+        lines.append("ℹ️ 이미 등록된 항목이므로 추가 등록 없음")
+
+    return "\n".join(lines)
+
+
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 # (B) HTML 메시지 포매터
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

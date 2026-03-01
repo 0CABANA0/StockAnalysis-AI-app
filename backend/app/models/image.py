@@ -58,6 +58,14 @@ class ImageAnalysisRequest(BaseModel):
         default="image/png",
         description="이미지 MIME 타입 (image/jpeg, image/png, image/webp)",
     )
+    auto_register_alerts: bool = Field(
+        default=False,
+        description="True이면 AI 추천의 목표가/손절가로 가격 알림을 자동 등록한다",
+    )
+    auto_register_watchlist: bool = Field(
+        default=False,
+        description="True이면 OCR로 추출된 종목을 관심종목에 자동 등록한다",
+    )
 
 
 class ImageAnalysisResponse(BaseModel):
@@ -65,3 +73,5 @@ class ImageAnalysisResponse(BaseModel):
     investment_guide: InvestmentGuide | None = None
     validation_status: str  # SUCCESS | PARTIAL | FAILED
     processing_time_ms: int
+    auto_alerts_created: int = 0
+    auto_watchlist_added: int = 0

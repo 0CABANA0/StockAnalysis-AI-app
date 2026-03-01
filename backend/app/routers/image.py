@@ -55,6 +55,8 @@ def analyze(
             media_type=body.media_type,
             client=client,
             user_id=user.user_id,
+            auto_register_alerts=body.auto_register_alerts,
+            auto_register_watchlist=body.auto_register_watchlist,
         )
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
@@ -62,7 +64,7 @@ def analyze(
         logger.error("Image analysis failed: %s", e)
         raise HTTPException(
             status_code=500,
-            detail=f"이미지 분석 중 오류가 발생했습니다: {e}",
+            detail="이미지 분석 중 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.",
         )
 
     return result

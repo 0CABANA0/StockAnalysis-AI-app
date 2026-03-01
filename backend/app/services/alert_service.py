@@ -342,6 +342,77 @@ def create_price_alert(
     )
 
 
+def create_alerts_from_holdings(
+    client: Client,
+    user_id: str,
+    recommendations: list,
+) -> int:
+    """AI 투자 가이드의 추천 목록에서 가격 알림을 일괄 생성한다.
+
+    중복 방지: 동일 (user_id, ticker, alert_type)이 이미 존재하면 건너뛴다.
+
+    Returns:
+        생성된 알림 수.
+    """
+    # 기존 알림 조회 — 중복 방지용
+    existing = (
+        client.table("price_alerts")
+        .select("ticker, alert_type")
+        .eq("user_id", user_id)
+        .eq("is_triggered", False)
+        .execute()
+    )
+    existing_keys = {
+        (r["ticker"], r["alert_type"]) for r in (existing.data or [])
+    }
+
+    created = 0
+    for rec in recommendations:
+        ticker = getattr(rec, "ticker", None) or rec.get("ticker") if isinstance(rec, dict) else rec.ticker
+        name = getattr(rec, "name", "") if not isinstance(rec, dict) else rec.get("name", "")
+        target_price = getattr(rec, "target_price", None) if not isinstance(rec, dict) else rec.get("target_price")
+        stop_loss = getattr(rec, "stop_loss", None) if not isinstance(rec, dict) else rec.get("stop_loss")
+
+        if not ticker:
+            continue
+
+        # 목표가 알림
+        if target_price and (ticker, "TARGET_PRICE") not in existing_keys:
+            try:
+                client.table("price_alerts").insert({
+                    "user_id": user_id,
+                    "ticker": ticker,
+                    "company_name": name,
+                    "alert_type": "TARGET_PRICE",
+                    "trigger_price": target_price,
+                    "memo": "이미지 분석 자동 등록",
+                }).execute()
+                existing_keys.add((ticker, "TARGET_PRICE"))
+                created += 1
+            except Exception as e:
+                logger.warning("Auto alert failed (TARGET_PRICE %s): %s", ticker, e)
+
+        # 손절가 알림
+        if stop_loss and (ticker, "STOP_LOSS") not in existing_keys:
+            try:
+                client.table("price_alerts").insert({
+                    "user_id": user_id,
+                    "ticker": ticker,
+                    "company_name": name,
+                    "alert_type": "STOP_LOSS",
+                    "trigger_price": stop_loss,
+                    "memo": "이미지 분석 자동 등록",
+                }).execute()
+                existing_keys.add((ticker, "STOP_LOSS"))
+                created += 1
+            except Exception as e:
+                logger.warning("Auto alert failed (STOP_LOSS %s): %s", ticker, e)
+
+    if created:
+        logger.info("Auto-created %d price alerts for user %s", created, user_id)
+    return created
+
+
 def delete_price_alert(client: Client, user_id: str, alert_id: str) -> DeleteResponse:
     """가격 알림을 삭제한다. 본인 소유만 삭제 가능."""
     # 소유권 확인
