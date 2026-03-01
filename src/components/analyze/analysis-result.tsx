@@ -1,10 +1,12 @@
 "use client";
 
 import {
+  Bell,
   CheckCircle2,
   AlertTriangle,
   XCircle,
   Clock,
+  Star,
   TrendingUp,
   TrendingDown,
   Minus,
@@ -87,9 +89,17 @@ interface AnalysisResultProps {
 }
 
 export function AnalysisResult({ result }: AnalysisResultProps) {
-  const { holdings, investment_guide, validation_status, processing_time_ms } =
-    result;
+  const {
+    holdings,
+    investment_guide,
+    validation_status,
+    processing_time_ms,
+    auto_alerts_created,
+    auto_watchlist_added,
+  } = result;
   const status = STATUS_MAP[validation_status] ?? STATUS_MAP.FAILED;
+  const hasAutoRegistration =
+    auto_alerts_created > 0 || auto_watchlist_added > 0;
 
   return (
     <div className="space-y-6">
@@ -104,6 +114,24 @@ export function AnalysisResult({ result }: AnalysisResultProps) {
           {(processing_time_ms / 1000).toFixed(1)}초
         </span>
       </div>
+
+      {/* 자동 등록 결과 */}
+      {hasAutoRegistration && (
+        <div className="bg-muted/50 flex flex-wrap gap-4 rounded-lg border p-3">
+          {auto_alerts_created > 0 && (
+            <span className="flex items-center gap-1.5 text-sm">
+              <Bell className="text-primary size-4" />
+              가격 알림 {auto_alerts_created}건 등록
+            </span>
+          )}
+          {auto_watchlist_added > 0 && (
+            <span className="flex items-center gap-1.5 text-sm">
+              <Star className="text-primary size-4" />
+              관심종목 {auto_watchlist_added}건 등록
+            </span>
+          )}
+        </div>
+      )}
 
       {/* 종목 테이블 */}
       <Card>

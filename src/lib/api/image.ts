@@ -51,6 +51,8 @@ export interface ImageAnalysisResponse {
   investment_guide: InvestmentGuide | null;
   validation_status: string;
   processing_time_ms: number;
+  auto_alerts_created: number;
+  auto_watchlist_added: number;
 }
 
 // ─── API 함수 ───
@@ -58,12 +60,18 @@ export interface ImageAnalysisResponse {
 export async function analyzeImage(
   imageData: string,
   mediaType: string,
+  options?: {
+    autoRegisterAlerts?: boolean;
+    autoRegisterWatchlist?: boolean;
+  },
 ): Promise<ImageAnalysisResponse> {
   return apiFetch<ImageAnalysisResponse>("/image/analyze", {
     method: "POST",
     body: JSON.stringify({
       image_data: imageData,
       media_type: mediaType,
+      auto_register_alerts: options?.autoRegisterAlerts ?? false,
+      auto_register_watchlist: options?.autoRegisterWatchlist ?? false,
     }),
   });
 }

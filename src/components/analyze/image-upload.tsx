@@ -6,6 +6,8 @@ import { Loader2, Upload, X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import { analyzeImage, type ImageAnalysisResponse } from "@/lib/api/image";
 
 const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp"];
@@ -21,6 +23,8 @@ export function ImageUpload({ onResult, onError }: ImageUploadProps) {
   const [fileName, setFileName] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [dragOver, setDragOver] = useState(false);
+  const [autoAlerts, setAutoAlerts] = useState(false);
+  const [autoWatchlist, setAutoWatchlist] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const processFile = useCallback(
@@ -78,7 +82,10 @@ export function ImageUpload({ onResult, onError }: ImageUploadProps) {
       const [header, base64Data] = preview.split(",");
       const mediaType = header.match(/data:(.*?);/)?.[1] ?? "image/png";
 
-      const result = await analyzeImage(base64Data, mediaType);
+      const result = await analyzeImage(base64Data, mediaType, {
+        autoRegisterAlerts: autoAlerts,
+        autoRegisterWatchlist: autoWatchlist,
+      });
       onResult(result);
     } catch (err) {
       onError(
@@ -144,6 +151,44 @@ export function ImageUpload({ onResult, onError }: ImageUploadProps) {
                   <X className="size-4" />
                 </button>
               )}
+            </div>
+            {/* 자동 등록 옵션 */}
+            <div className="bg-muted/50 flex flex-col gap-3 rounded-lg border p-3">
+              <p className="text-muted-foreground text-xs font-medium">
+                분석 시 자동 등록 옵션
+              </p>
+              <div className="flex flex-wrap gap-x-6 gap-y-2">
+                <div className="flex items-center gap-2">
+                  <Switch
+                    id="auto-alerts"
+                    checked={autoAlerts}
+                    onCheckedChange={setAutoAlerts}
+                    size="sm"
+                    disabled={loading}
+                  />
+                  <Label
+                    htmlFor="auto-alerts"
+                    className="text-sm font-normal cursor-pointer"
+                  >
+                    가격 알림 자동 등록
+                  </Label>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Switch
+                    id="auto-watchlist"
+                    checked={autoWatchlist}
+                    onCheckedChange={setAutoWatchlist}
+                    size="sm"
+                    disabled={loading}
+                  />
+                  <Label
+                    htmlFor="auto-watchlist"
+                    className="text-sm font-normal cursor-pointer"
+                  >
+                    관심종목 자동 등록
+                  </Label>
+                </div>
+              </div>
             </div>
             <div className="flex items-center justify-between">
               <p className="text-muted-foreground text-sm">{fileName}</p>
